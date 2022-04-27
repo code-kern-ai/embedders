@@ -16,12 +16,4 @@ class TokenEmbedder(Embedder):
             return document
         else:
             return self.nlp(document)
-
-    def encode(self, documents, as_generator=False, fit_model=True):
-        if as_generator:
-            return self._encode(documents, fit_model)
-        else:
-            embeddings = []
-            for embedding_batch in self._encode(documents, fit_model):
-                embeddings.extend(embedding_batch)
-            return embeddings
+            

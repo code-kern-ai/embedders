@@ -1,4 +1,3 @@
-import spacy
 from sklearn.feature_extraction.text import CountVectorizer
 
 from embedders.extraction import TokenEmbedder

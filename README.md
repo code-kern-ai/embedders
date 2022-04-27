@@ -1,6 +1,9 @@
 # embedders
 With embedders, you can easily convert your text into sentence- or token-level embeddings within a few lines of code. Use cases for this include similarity search between texts, information extraction such as named entity recognition, or basic text classification.
 
+## How to install
+You can set up this library via either running `pip install embedders`, or via cloning this repository and running `pip install -r requirements.txt` in your repository.
+
 ## Example
 *Calculating sentence embeddings*
 ```python

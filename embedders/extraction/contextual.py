@@ -1,27 +1,49 @@
 import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
-import spacy
 from collections import defaultdict
+from gensim.models import word2vec
+
 
 from embedders.extraction import TokenEmbedder
 
 
-class SentenceExtractionEmbedder(TokenEmbedder):
+class SkipGramTokenEmbedder(TokenEmbedder):
+    def __init__(self, language_code, precomputed_docs=False, batch_size=128):
+        super().__init__(language_code, precomputed_docs, batch_size)
+        self.model = None
+
+    def _encode(self, documents, fit_model):
+        def lookup_w2v(text):
+            try:
+                return self.model.wv[text].tolist()
+            except KeyError:
+                return [0 for _ in range(self.model.vector_size)]
+
+        if not self.preloaded:
+            documents = [self.nlp(doc) for doc in documents]
+            vocabulary = []
+            for doc in documents:
+                vocabulary.append([tok.text for tok in doc])
+            if fit_model:
+                self.model = word2vec.Word2Vec(vocabulary, min_count=1)
+
+        for documents_batch in self.batch(documents):
+            documents_batch_embedded = []
+            for doc in documents_batch:
+                documents_batch_embedded.append([lookup_w2v(tok.text) for tok in doc])
+            yield documents_batch_embedded
+
+
+class TransformerTokenEmbedder(TokenEmbedder):
     def __init__(
         self, config_string: str, language_code, precomputed_docs=False, batch_size=128
     ):
+        super().__init__(language_code, precomputed_docs, batch_size)
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(config_string)
         self.model = AutoModel.from_pretrained(config_string, output_hidden_states=True)
 
-        self.preloaded = precomputed_docs
-        if precomputed_docs:
-            self.nlp = spacy.blank(language_code)
-        else:
-            self.nlp = spacy.load(language_code)
-        self.batch_size = batch_size
-
-    def batch_encode(self, documents):
+    def _encode(self, documents, fit_model):
         for documents_batch in self.batch(documents):
             documents_batch_embedded = []
             for doc in documents_batch:

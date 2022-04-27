@@ -4,6 +4,8 @@ With embedders, you can easily convert your text into sentence- or token-level e
 ## How to install
 You can set up this library via either running `pip install embedders`, or via cloning this repository and running `pip install -r requirements.txt` in your repository.
 
+**Caution:** We currently have this tested for Python 3 up to Python 3.9. If your installation runs into issues, please contact us.
+
 ## Example
 *Calculating sentence embeddings*
 ```python

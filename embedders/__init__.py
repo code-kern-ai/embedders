@@ -31,7 +31,7 @@ class Embedder(ABC):
 
 
 class PCAReducer(ABC):
-    def __init__(self, embedder, **kwargs):
+    def __init__(self, embedder, n_components=8, **kwargs):
         self.embedder = embedder
         self.reducer = PCA(**kwargs)
         self.batch_size = self.embedder.batch_size

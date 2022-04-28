@@ -34,6 +34,7 @@ class PCAReducer(ABC):
     def __init__(self, embedder, n_components=8):
         self.embedder = embedder
         self.reducer = PCA(n_components=n_components)
+        self.batch_size = self.embedder.batch_size
 
     def transform(self, documents):
         embeddings = self.embedder.encode(documents, fit_model=False)

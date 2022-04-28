@@ -31,9 +31,9 @@ class Embedder(ABC):
 
 
 class PCAReducer(ABC):
-    def __init__(self, embedder, n_components=8):
+    def __init__(self, embedder, **kwargs):
         self.embedder = embedder
-        self.reducer = PCA(n_components=n_components)
+        self.reducer = PCA(**kwargs)
         self.batch_size = self.embedder.batch_size
 
     def transform(self, documents):
@@ -53,7 +53,15 @@ class PCAReducer(ABC):
             documents, fit_batches=fit_batches, as_generator=as_generator
         )
 
-    def fit_transform(self, documents, fit_batches=5, as_generator=False):
+    def fit_transform(
+        self,
+        documents,
+        fit_batches=5,
+        as_generator=False,
+        autocorrect_n_components=True,
+    ):
+        if autocorrect_n_components:
+            self.reducer.n_components = min(self.reducer.n_components, len(documents))
         if as_generator:
             return self._fit_transform(documents, fit_batches)
         else:

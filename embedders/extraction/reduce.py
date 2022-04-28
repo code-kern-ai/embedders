@@ -3,6 +3,10 @@ from embedders import PCAReducer
 
 
 class PCATokenReducer(PCAReducer):
+    def __init__(self, embedder, **kwargs):
+        super().__init__(embedder=embedder, **kwargs)
+        self.nlp = embedder.nlp
+
     def transform_batch(self, embedding_batch):
         batch_concatenated = np.concatenate(embedding_batch)
 

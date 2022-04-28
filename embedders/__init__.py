@@ -47,6 +47,11 @@ class PCAReducer(ABC):
     def _fit_transform(self, documents, fit_batches):
         pass
 
+    def encode(self, documents, fit_batches=5, as_generator=False):
+        return self.fit_transform(
+            documents, fit_batches=fit_batches, as_generator=as_generator
+        )
+
     def fit_transform(self, documents, fit_batches=5, as_generator=False):
         if as_generator:
             return self._fit_transform(documents, fit_batches)

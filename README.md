@@ -51,7 +51,7 @@ from embedders.classification.reduce import PCASentenceReducer
 corpus = [
     "I went to Cologne in 2009",
     "My favorite number is 41",
-    ...
+    # ...
 ]
 
 embedder = TransformerSentenceEmbedder("bert-base-cased")

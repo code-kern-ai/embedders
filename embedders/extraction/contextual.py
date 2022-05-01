@@ -1,25 +1,31 @@
+from typing import List, Tuple, Union, Generator
 import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
 from collections import defaultdict
 from gensim.models import word2vec
 from embedders import util
+from spacy.tokens.doc import Doc
 
 
 from embedders.extraction import TokenEmbedder
 
 
 class SkipGramTokenEmbedder(TokenEmbedder):
-    def __init__(self, language_code, precomputed_docs=False, batch_size=128):
+    def __init__(
+        self, language_code: str, precomputed_docs: bool = False, batch_size: int = 128
+    ):
         super().__init__(language_code, precomputed_docs, batch_size)
         self.model = None
 
-    def _encode(self, documents, fit_model):
-        def lookup_w2v(text):
+    def _encode(
+        self, documents: Union[List[str], List[Doc]], fit_model: bool
+    ) -> Generator[List[List[List[float]]], None, None]:
+        def lookup_w2v(text: str) -> List[float]:
             try:
                 return self.model.wv[text].tolist()
             except KeyError:
-                return [0 for _ in range(self.model.vector_size)]
+                return [0.0 for _ in range(self.model.vector_size)]
 
         if not self.preloaded:
             documents = [self.nlp(doc) for doc in documents]
@@ -38,24 +44,35 @@ class SkipGramTokenEmbedder(TokenEmbedder):
 
 class TransformerTokenEmbedder(TokenEmbedder):
     def __init__(
-        self, config_string: str, language_code, precomputed_docs=False, batch_size=128
+        self,
+        config_string: str,
+        language_code: str,
+        precomputed_docs: bool = False,
+        batch_size: int = 128,
     ):
         super().__init__(language_code, precomputed_docs, batch_size)
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(config_string)
         self.model = AutoModel.from_pretrained(config_string, output_hidden_states=True)
 
-    def _encode(self, documents, fit_model):
+    def _encode(
+        self, documents: Union[List[str], List[Doc]], fit_model: bool
+    ) -> Generator[List[List[List[float]]], None, None]:
         for documents_batch in util.batch(documents, self.batch_size):
             documents_batch_embedded = []
             for doc in documents_batch:
                 char_level_embs = self._get_char_level_embeddings(str(doc))
-                document_embedded = self._match(
-                    self.get_tokenized_document(doc), char_level_embs
+                doc = self._get_tokenized_document(doc)
+                document_embedded = self._get_token_embedding_from_char_embedding(
+                    char_level_embs, doc
                 )
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
 
-    def _match(self, document_tokenized, char_level_embeddings):
+    def _get_token_embedding_from_char_embedding(
+        self,
+        char_level_embeddings: List[List[Tuple[int, int, List[List[float]]]]],
+        document_tokenized: Doc,
+    ) -> List[List[float]]:
         embeddings = defaultdict(list)
 
         for index_start, index_end, char_embeddings in char_level_embeddings:
@@ -69,7 +86,9 @@ class TransformerTokenEmbedder(TokenEmbedder):
             embeddings[key] = np.array(values).mean(0).tolist()
         return list(embeddings.values())
 
-    def _get_char_level_embeddings(self, document):
+    def _get_char_level_embeddings(
+        self, document: str
+    ) -> List[List[Tuple[int, int, List[List[float]]]]]:
         encoded = self.transformer_tokenizer.encode_plus(document, return_tensors="pt")
         tokens = encoded.encodings[0]
         num_tokens = len(

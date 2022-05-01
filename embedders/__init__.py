@@ -73,12 +73,20 @@ class PCAReducer(Transformer):
     Args:
         embedder (Embedder): Algorithm to embed the documents.
         n_components (int, optional): Number of principal components to keep. Defaults to 8.
+        autocorrect_n_components (bool, optional): If there are less data samples than specified components, this will automatically reduce the number of principial components. Defaults to True.
     """
 
-    def __init__(self, embedder: Embedder, n_components: int = 8, **kwargs):
+    def __init__(
+        self,
+        embedder: Embedder,
+        n_components: int = 8,
+        autocorrect_n_components: bool = True,
+        **kwargs
+    ):
         self.embedder = embedder
         self.reducer = PCA(n_components=n_components, **kwargs)
         self.batch_size = self.embedder.batch_size
+        self.autocorrect_n_components = autocorrect_n_components
 
     @abstractmethod
     def _reduce(
@@ -94,10 +102,9 @@ class PCAReducer(Transformer):
         documents: List[Union[str, Doc]],
         as_generator: bool,
         fit_model: bool,
-        autocorrect_n_components: bool,
         fit_after_n_batches: int,
     ) -> Union[List, Generator]:
-        if autocorrect_n_components:
+        if self.autocorrect_n_components:
             self.reducer.n_components = min(self.reducer.n_components, len(documents))
         if as_generator:
             return self._reduce(documents, fit_model, fit_after_n_batches)
@@ -114,7 +121,6 @@ class PCAReducer(Transformer):
         documents: List[Union[str, Doc]],
         as_generator: bool = False,
         fit_after_n_batches: int = 5,
-        autocorrect_n_components: bool = True,
     ) -> Union[List, Generator]:
         """Trains the given algorithm to embed textual documents into semantic vector-spacy representations.
 
@@ -122,14 +128,16 @@ class PCAReducer(Transformer):
             documents (List[Union[str, Doc]]): List of plain strings or spaCy documents.
             as_generator (bool, optional): Embeddings are calculated batch-wise. If this is set to true, the results will be summarized in one list, else a generator will yield the values.. Defaults to False.
             fit_after_n_batches (int, optional): Maximal batch iteration, after which the PCA is fitted. Defaults to 5.
-            autocorrect_n_components (bool, optional): If there are less data samples than specified components, this will automatically reduce the number of principial components. Defaults to True.
 
         Returns:
             Union[List, Generator]: List with all embeddings or generator that yields the embeddings.
         """
 
         return self._reduce_batch(
-            documents, as_generator, True, autocorrect_n_components, fit_after_n_batches
+            documents,
+            as_generator,
+            True,
+            fit_after_n_batches,
         )
 
     def transform(self, documents, as_generator=False) -> Union[List, Generator]:

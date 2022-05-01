@@ -1,5 +1,6 @@
 ![embedders](banner.png)
 
+https://img.shields.io/badge/version-0.0.5-brightgreen
 # ⚗️ embedders
 With `embedders`, you can easily convert your texts into sentence- or token-level embeddings within a few lines of code. Use cases for this include similarity search between texts, information extraction such as named entity recognition, or basic text classification.
 

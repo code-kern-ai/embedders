@@ -3,6 +3,7 @@ import numpy as np
 from transformers import AutoTokenizer, AutoModel
 from collections import defaultdict
 from gensim.models import word2vec
+from embedders import util
 
 
 from embedders.extraction import TokenEmbedder
@@ -28,7 +29,7 @@ class SkipGramTokenEmbedder(TokenEmbedder):
             if fit_model:
                 self.model = word2vec.Word2Vec(vocabulary, min_count=1)
 
-        for documents_batch in self.batch(documents):
+        for documents_batch in util.batch(documents, self.batch_size):
             documents_batch_embedded = []
             for doc in documents_batch:
                 documents_batch_embedded.append([lookup_w2v(tok.text) for tok in doc])
@@ -44,17 +45,17 @@ class TransformerTokenEmbedder(TokenEmbedder):
         self.model = AutoModel.from_pretrained(config_string, output_hidden_states=True)
 
     def _encode(self, documents, fit_model):
-        for documents_batch in self.batch(documents):
+        for documents_batch in util.batch(documents, self.batch_size):
             documents_batch_embedded = []
             for doc in documents_batch:
                 char_level_embs = self._get_char_level_embeddings(str(doc))
-                document_embedded = self.match(
+                document_embedded = self._match(
                     self.get_tokenized_document(doc), char_level_embs
                 )
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
 
-    def match(self, document_tokenized, char_level_embeddings):
+    def _match(self, document_tokenized, char_level_embeddings):
         embeddings = defaultdict(list)
 
         for index_start, index_end, char_embeddings in char_level_embeddings:

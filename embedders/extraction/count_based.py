@@ -1,9 +1,10 @@
 from sklearn.feature_extraction.text import CountVectorizer
+from embedders import util
 
 from embedders.extraction import TokenEmbedder
 
 
-class CharacterTokenEmbedder(TokenEmbedder):
+class BagOfCharsTokenEmbedder(TokenEmbedder):
     def __init__(self, language_code, precomputed_docs=False, batch_size=128):
         super().__init__(language_code, precomputed_docs, batch_size)
         self.model = CountVectorizer(analyzer="char", min_df=0.01)
@@ -15,7 +16,7 @@ class CharacterTokenEmbedder(TokenEmbedder):
             else:
                 self.model.fit(documents)
 
-        for documents_batch in self.batch(documents):
+        for documents_batch in util.batch(documents, self.batch_size):
             documents_batch_embedded = []
             for doc in documents_batch:
                 documents_batch_embedded.append(

@@ -29,6 +29,14 @@ Once you installed the package, you can apply the embedders with a few lines of 
 ]
 ```
 
+Currently, we provide the following sentence embeddings:
+| **Path**                             | **Name**                    | **Embeds documents using ...**                               |
+| ------------------------------------ | --------------------------- | ------------------------------------------------------------ |
+| embedders.classification.contextual  | TransformerSentenceEmbedder | large, pre-trained transformers from https://huggingface.co  |
+| embedders.classification.count_based | BagOfCharsSentenceEmbedder  | plain Bag of Chars approach                                  |
+| embedders.classification.count_based | BagOfWordsSentenceEmbedder  | plain Bag of Words approach                                  |
+| embedders.classification.count_based | TfidfSentenceEmbedder       | Term Frequency - Inverse Document Frequency (TFIDF) approach |
+
 ### Token embeddings
 `"Wow, what a cool tool!"` is embedded to
 ```
@@ -41,6 +49,14 @@ Once you installed the package, you can apply the embedders with a few lines of 
     [3.023, 4.974, ...]
 ]
 ```
+
+Currently, we provide the following token embeddings:
+
+| **Path**                         | **Name**                 | **Embeds documents using ...**                              |
+| -------------------------------- | ------------------------ | ----------------------------------------------------------- |
+| embedders.extraction.contextual  | SkipGramTokenEmbedder    | a word2vec approach from gensim                             |
+| embedders.extraction.contextual  | TransformerTokenEmbedder | large, pre-trained transformers from https://huggingface.co |
+| embedders.extraction.count_based | BagOfCharsTokenEmbedder  | plain Bag of Characters approach                            |
 
 You can choose the embedding category depending on your task at hand. To implement them, you can just grab one of the available methods and apply them to your text corpus as follows (shown for sentence embeddings, but the same is possible for token):
 
@@ -65,6 +81,12 @@ Sometimes, you want to reduce the size of the embeddings you received. To do so,
 reducer = PCASentenceReducer(embedder)
 embeddings_reduced = reducer.fit_transform(corpus)
 ```
+
+Currently, we provide the following dimensionality reductions:
+| **Path**                        | **Name**            | **Description**                                                                  |
+| ------------------------------- | ------------------- | -------------------------------------------------------------------------------- |
+| embedders.classification.reduce | PCASentenceEmbedder | Wraps embedder into a principial component analysis to reduce the dimensionality |
+| embedders.extraction.reduce     | PCATokenEmbedder    | Wraps embedder into a principial component analysis to reduce the dimensionality |
 
 ## Pre-trained embedders
 With growing availability of large, pre-trained models such as provided by [🤗 Hugging Face](https://huggingface.co/), embedding complex sentences in a wide variety of languages and domains becomes much more applicable. If you want to make use of transformer models, you can just use the configuration string of the respective model, which will automatically pull the correct model for the [🤗 Hugging Face Hub](https://huggingface.co/models).

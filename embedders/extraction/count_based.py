@@ -7,6 +7,14 @@ from embedders.extraction import TokenEmbedder
 
 
 class BagOfCharsTokenEmbedder(TokenEmbedder):
+    """Embeds documents using plain Bag of Characters approach.
+
+    Args:
+        language_code (str): Name of the spaCy language model
+        precomputed_docs (bool, optional): If you have a large text corpus, it might make sense to precompute the data and input tokenized spaCy documents. Defaults to False.
+        batch_size (int, optional): Defines the number of conversions after which the embedder yields. Defaults to 128.
+    """
+
     def __init__(
         self, language_code: str, precomputed_docs: bool = False, batch_size: int = 128
     ):

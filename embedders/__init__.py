@@ -1,19 +1,38 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Generator, Union
+from typing import List, Generator, Union
+from spacy.tokens.doc import Doc
 from sklearn.decomposition import PCA
 
 
 class Transformer(ABC):
     @abstractmethod
     def fit_transform(
-        self, documents: List[Any], as_generator: bool
+        self, documents: List[Union[str, Doc]], as_generator: bool
     ) -> Union[List, Generator]:
+        """Trains the given algorithm to embed textual documents into semantic vector-spacy representations.
+
+        Args:
+            documents (List[Union[str, Doc]]): List of plain strings or spaCy documents.
+            as_generator (bool): Embeddings are calculated batch-wise. If this is set to true, the results will be summarized in one list, else a generator will yield the values.
+
+        Returns:
+            Union[List, Generator]: List with all embeddings or generator that yields the embeddings.
+        """
         pass
 
     @abstractmethod
     def transform(
-        self, documents: List[Any], as_generator: bool
+        self, documents: List[Union[str, Doc]], as_generator: bool
     ) -> Union[List, Generator]:
+        """Uses the trained algorithm to embed textual documents into semantic vector-spacy representations.
+
+        Args:
+            documents (List[Union[str, Doc]]): List of plain strings or spaCy documents.
+            as_generator (bool): Embeddings are calculated batch-wise. If this is set to true, the results will be summarized in one list, else a generator will yield the values.
+
+        Returns:
+            Union[List, Generator]: List with all embeddings or generator that yields the embeddings.
+        """
         pass
 
 
@@ -23,11 +42,11 @@ class Embedder(Transformer):
         pass
 
     @abstractmethod
-    def _encode(self, documents: List[Any], fit_model: bool) -> Generator:
+    def _encode(self, documents: List[Union[str, Doc]], fit_model: bool) -> Generator:
         pass
 
     def _encode_batch(
-        self, documents: List[Any], as_generator: bool, fit_model: bool
+        self, documents: List[Union[str, Doc]], as_generator: bool, fit_model: bool
     ) -> Union[List, Generator]:
         if as_generator:
             return self._encode(documents, fit_model)
@@ -38,29 +57,41 @@ class Embedder(Transformer):
             return embeddings
 
     def fit_transform(
-        self, documents: List[Any], as_generator: bool = False
+        self, documents: List[Union[str, Doc]], as_generator: bool = False
     ) -> Union[List, Generator]:
         return self._encode_batch(documents, as_generator, True)
 
     def transform(
-        self, documents: List[Any], as_generator: bool = False
+        self, documents: List[Union[str, Doc]], as_generator: bool = False
     ) -> Union[List, Generator]:
         return self._encode_batch(documents, as_generator, False)
 
 
 class PCAReducer(Transformer):
+    """Wraps embedder into a principial component analysis to reduce the dimensionality.
+
+    Args:
+        embedder (Embedder): Algorithm to embed the documents.
+        n_components (int, optional): Number of principal components to keep. Defaults to 8.
+    """
+
     def __init__(self, embedder: Embedder, n_components: int = 8, **kwargs):
         self.embedder = embedder
         self.reducer = PCA(n_components=n_components, **kwargs)
         self.batch_size = self.embedder.batch_size
 
     @abstractmethod
-    def _reduce(self, documents: List[Any], fit_model: bool, fit_after_n_batches: int):
+    def _reduce(
+        self,
+        documents: List[Union[str, Doc]],
+        fit_model: bool,
+        fit_after_n_batches: int,
+    ):
         pass
 
     def _reduce_batch(
         self,
-        documents: List[Any],
+        documents: List[Union[str, Doc]],
         as_generator: bool,
         fit_model: bool,
         autocorrect_n_components: bool,
@@ -80,11 +111,23 @@ class PCAReducer(Transformer):
 
     def fit_transform(
         self,
-        documents: List[Any],
+        documents: List[Union[str, Doc]],
         as_generator: bool = False,
         fit_after_n_batches: int = 5,
         autocorrect_n_components: bool = True,
     ) -> Union[List, Generator]:
+        """Trains the given algorithm to embed textual documents into semantic vector-spacy representations.
+
+        Args:
+            documents (List[Union[str, Doc]]): List of plain strings or spaCy documents.
+            as_generator (bool, optional): Embeddings are calculated batch-wise. If this is set to true, the results will be summarized in one list, else a generator will yield the values.. Defaults to False.
+            fit_after_n_batches (int, optional): Maximal batch iteration, after which the PCA is fitted. Defaults to 5.
+            autocorrect_n_components (bool, optional): If there are less data samples than specified components, this will automatically reduce the number of principial components. Defaults to True.
+
+        Returns:
+            Union[List, Generator]: List with all embeddings or generator that yields the embeddings.
+        """
+
         return self._reduce_batch(
             documents, as_generator, True, autocorrect_n_components, fit_after_n_batches
         )

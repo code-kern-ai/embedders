@@ -6,7 +6,15 @@ from spacy.tokens.doc import Doc
 
 
 class TransformerSentenceEmbedder(SentenceEmbedder):
+    """Embeds documents using large, pre-trained transformers from https://huggingface.co
+
+    Args:
+        config_string (str): Name of the model listed on https://huggingface.co/models
+        batch_size (int, optional): Defines the number of conversions after which the embedder yields. Defaults to 128.
+    """
+
     def __init__(self, config_string: str, batch_size: int = 128):
+
         super().__init__(batch_size)
         self.model = SentenceTransformer(config_string)
 

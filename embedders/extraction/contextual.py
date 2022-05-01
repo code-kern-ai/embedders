@@ -12,6 +12,14 @@ from embedders.extraction import TokenEmbedder
 
 
 class SkipGramTokenEmbedder(TokenEmbedder):
+    """Embeds documents using a word2vec approach from gensim.
+
+    Args:
+        language_code (str): Name of the spaCy language model
+        precomputed_docs (bool, optional): If you have a large text corpus, it might make sense to precompute the data and input tokenized spaCy documents. Defaults to False.
+        batch_size (int, optional): Defines the number of conversions after which the embedder yields. Defaults to 128.
+    """
+
     def __init__(
         self, language_code: str, precomputed_docs: bool = False, batch_size: int = 128
     ):
@@ -43,6 +51,15 @@ class SkipGramTokenEmbedder(TokenEmbedder):
 
 
 class TransformerTokenEmbedder(TokenEmbedder):
+    """Embeds documents using large, pre-trained transformers from https://huggingface.co
+
+    Args:
+        config_string (str): Name of the model listed on https://huggingface.co/models
+        language_code (str): Name of the spaCy language model
+        precomputed_docs (bool, optional): If you have a large text corpus, it might make sense to precompute the data and input tokenized spaCy documents. Defaults to False.
+        batch_size (int, optional): Defines the number of conversions after which the embedder yields. Defaults to 128.
+    """
+
     def __init__(
         self,
         config_string: str,

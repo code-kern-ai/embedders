@@ -94,11 +94,11 @@ Currently, we provide the following dimensionality reductions:
 With growing availability of large, pre-trained models such as provided by [🤗 Hugging Face](https://huggingface.co/), embedding complex sentences in a wide variety of languages and domains becomes much more applicable. If you want to make use of transformer models, you can just use the configuration string of the respective model, which will automatically pull the correct model for the [🤗 Hugging Face Hub](https://huggingface.co/models).
 
 ## Roadmap
-- [ ] Add extensive documentation to existing embedders
+- [x] Add extensive documentation to existing embedders
 - [ ] Add sample projects
-- [ ] Add text feature-based sentence and word embedders
+- [ ] Add test cases
+- [ ] Add further text feature-based sentence and word embedders
 - [ ] Add pre-trained word2vec embeddings
-- [ ] Improve interface of dimensionality reduction
 
 If you want to have something added, feel free to open an [issue](https://github.com/code-kern-ai/embedders/issues).
 

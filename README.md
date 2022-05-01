@@ -1,4 +1,4 @@
-![embedders](banner.png)
+![embedders](https://uploads-ssl.webflow.com/61e47fafb12bd56b40022a49/626ee1c35a3abf0ca872486d_embedder-banner.png)
 <img src="https://img.shields.io/badge/version-0.0.5-red" />
 <img src="https://img.shields.io/badge/pip-0.0.5-red" />
 

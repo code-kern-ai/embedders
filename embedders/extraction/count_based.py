@@ -16,10 +16,14 @@ class BagOfCharsTokenEmbedder(TokenEmbedder):
     """
 
     def __init__(
-        self, language_code: str, precomputed_docs: bool = False, batch_size: int = 128
+        self,
+        language_code: str,
+        precomputed_docs: bool = False,
+        batch_size: int = 128,
+        **kwargs
     ):
         super().__init__(language_code, precomputed_docs, batch_size)
-        self.model = CountVectorizer(analyzer="char", min_df=0.01)
+        self.model = CountVectorizer(analyzer="char", min_df=0.01, **kwargs)
 
     def _encode(
         self, documents: List[Union[str, Doc]], fit_model: bool

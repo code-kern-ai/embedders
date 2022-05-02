@@ -30,7 +30,18 @@ class PCASentenceReducer(PCAReducer):
                     embeddings_training_flattened = []
                     for batch_training in embeddings_training:
                         embeddings_training_flattened.extend(batch_training)
-                    self.reducer.fit(np.array(embeddings_training_flattened))
+                    embeddings_training_flattened = np.array(
+                        embeddings_training_flattened
+                    )
+                    if (
+                        embeddings_training_flattened.shape[1]
+                        < self.reducer.n_components
+                        and self.autocorrect_n_components
+                    ):
+                        self.reducer.n_components = embeddings_training_flattened.shape[
+                            1
+                        ]
+                    self.reducer.fit(embeddings_training_flattened)
 
                     for batch_training in embeddings_training:
                         yield self._transform(batch_training)

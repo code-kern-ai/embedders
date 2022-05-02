@@ -104,8 +104,6 @@ class PCAReducer(Transformer):
         fit_model: bool,
         fit_after_n_batches: int,
     ) -> Union[List, Generator]:
-        if self.autocorrect_n_components:
-            self.reducer.n_components = min(self.reducer.n_components, len(documents))
         if as_generator:
             return self._reduce(documents, fit_model, fit_after_n_batches)
         else:

@@ -61,3 +61,4 @@ class TfidfSentenceEmbedder(CountSentenceEmbedder):
     def __init__(self, batch_size: int = 128, min_df: float = 0.1, **kwargs):
         super().__init__(batch_size, min_df)
         self.model = TfidfVectorizer(min_df=min_df, **kwargs)
+

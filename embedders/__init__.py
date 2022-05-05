@@ -124,7 +124,7 @@ class PCAReducer(Transformer):
 
         Args:
             documents (List[Union[str, Doc]]): List of plain strings or spaCy documents.
-            as_generator (bool, optional): Embeddings are calculated batch-wise. If this is set to true, the results will be summarized in one list, else a generator will yield the values.. Defaults to False.
+            as_generator (bool, optional): Embeddings are calculated batch-wise. If this is set to False, the results will be summarized in one list, else a generator will yield the values.. Defaults to False.
             fit_after_n_batches (int, optional): Maximal batch iteration, after which the PCA is fitted. Defaults to 5.
 
         Returns:

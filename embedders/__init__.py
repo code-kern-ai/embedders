@@ -13,7 +13,7 @@ class Transformer(ABC):
 
         Args:
             documents (List[Union[str, Doc]]): List of plain strings or spaCy documents.
-            as_generator (bool): Embeddings are calculated batch-wise. If this is set to true, the results will be summarized in one list, else a generator will yield the values.
+            as_generator (bool): Embeddings are calculated batch-wise. If this is set to False, the results will be summarized in one list, else a generator will yield the values.
 
         Returns:
             Union[List, Generator]: List with all embeddings or generator that yields the embeddings.
@@ -28,7 +28,7 @@ class Transformer(ABC):
 
         Args:
             documents (List[Union[str, Doc]]): List of plain strings or spaCy documents.
-            as_generator (bool): Embeddings are calculated batch-wise. If this is set to true, the results will be summarized in one list, else a generator will yield the values.
+            as_generator (bool): Embeddings are calculated batch-wise. If this is set to False, the results will be summarized in one list, else a generator will yield the values.
 
         Returns:
             Union[List, Generator]: List with all embeddings or generator that yields the embeddings.

@@ -73,7 +73,7 @@ corpus = [
 ]
 
 embedder = TransformerSentenceEmbedder("bert-base-cased")
-embeddings = embedder.encode(corpus) # contains a list of shape [num_texts, embedding_dimension]
+embeddings = embedder.fit_transform(corpus) # contains a list of shape [num_texts, embedding_dimension]
 ```
 
 Sometimes, you want to reduce the size of the embeddings you received. To do so, you can easily wrap your embedder with some dimensionality reduction technique.

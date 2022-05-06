@@ -9,7 +9,7 @@ with open(os.path.join(this_directory, "README.md")) as file:
 
 setup(
     name="embedders",
-    version="0.0.7",
+    version="0.0.8",
     author="Johannes Hötter",
     author_email="johannes.hoetter@kern.ai",
     description="High-level API for creating sentence and token embeddings",

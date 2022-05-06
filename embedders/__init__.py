@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List, Generator, Union
+from typing import List, Generator, Optional, Union
 from spacy.tokens.doc import Doc
 from sklearn.decomposition import PCA
+from tqdm import tqdm
+from embedders import util
 
 
 class Transformer(ABC):
@@ -46,14 +48,20 @@ class Embedder(Transformer):
         pass
 
     def _encode_batch(
-        self, documents: List[Union[str, Doc]], as_generator: bool, fit_model: bool
+        self, documents: List[Union[str, Doc]], as_generator: bool, fit_model: bool, show_progress: Optional[bool] = True
     ) -> Union[List, Generator]:
         if as_generator:
             return self._encode(documents, fit_model)
         else:
             embeddings = []
-            for embedding_batch in self._encode(documents, fit_model):
-                embeddings.extend(embedding_batch)
+            if show_progress:
+                num_batches = util.num_batches(documents, self.batch_size)
+                print("Initializing model, might take some time...")
+                for embedding_batch in tqdm(self._encode(documents, fit_model), total=num_batches):
+                    embeddings.extend(embedding_batch)
+            else:
+                for embedding_batch in self._encode(documents, fit_model):
+                    embeddings.extend(embedding_batch)
             return embeddings
 
     def fit_transform(

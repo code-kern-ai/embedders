@@ -20,7 +20,7 @@ pathy==0.6.1
 Pillow==9.1.0
 preshed==3.0.6
 pydantic==1.8.2
-pyparsing==3.0.8
+pyparsing==3.0.9
 PyYAML==6.0
 regex==2022.4.24
 requests==2.27.1

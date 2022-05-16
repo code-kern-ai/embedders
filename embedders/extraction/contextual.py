@@ -46,7 +46,8 @@ class SkipGramTokenEmbedder(TokenEmbedder):
         for documents_batch in util.batch(documents, self.batch_size):
             documents_batch_embedded = []
             for doc in documents_batch:
-                documents_batch_embedded.append([lookup_w2v(tok.text) for tok in doc])
+                documents_batch_embedded.append(
+                    [lookup_w2v(tok.text) for tok in doc])
             yield documents_batch_embedded
 
 
@@ -68,8 +69,15 @@ class TransformerTokenEmbedder(TokenEmbedder):
         batch_size: int = 128,
     ):
         super().__init__(language_code, precomputed_docs, batch_size)
-        self.transformer_tokenizer = AutoTokenizer.from_pretrained(config_string)
-        self.model = AutoModel.from_pretrained(config_string, output_hidden_states=True)
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() else 'cpu'
+        )
+        self.transformer_tokenizer = AutoTokenizer.from_pretrained(
+            config_string
+        )
+        self.model = AutoModel.from_pretrained(
+            config_string, output_hidden_states=True
+        ).to(self.device)
 
     def _encode(
         self, documents: Union[List[str], List[Doc]], fit_model: bool
@@ -106,7 +114,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
     def _get_char_level_embeddings(
         self, document: str
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
-        encoded = self.transformer_tokenizer.encode_plus(document, return_tensors="pt")
+        encoded = self.transformer_tokenizer.encode_plus(
+            document, return_tensors="pt")
         tokens = encoded.encodings[0]
         num_tokens = len(
             set(tokens.words[1:-1])
@@ -124,7 +133,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
         for token_idx in range(num_tokens):
             index_begin, index_end = tokens.word_to_chars(token_idx)
-            token_ids_word = np.where(np.array(encoded.word_ids()) == token_idx)
+            token_ids_word = np.where(
+                np.array(encoded.word_ids()) == token_idx)
             # Only select the tokens that constitute the requested word
             word_tokens_output = output[token_ids_word]
             token_embeddings.append(

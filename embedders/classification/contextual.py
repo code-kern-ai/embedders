@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 from embedders import util
 from embedders.classification import SentenceEmbedder
 from spacy.tokens.doc import Doc
+import torch
 
 
 class TransformerSentenceEmbedder(SentenceEmbedder):
@@ -16,7 +17,10 @@ class TransformerSentenceEmbedder(SentenceEmbedder):
     def __init__(self, config_string: str, batch_size: int = 128):
 
         super().__init__(batch_size)
-        self.model = SentenceTransformer(config_string)
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() else 'cpu'
+        )
+        self.model = SentenceTransformer(config_string).to(self.device)
 
     def _encode(
         self, documents: List[Union[str, Doc]], fit_model: bool

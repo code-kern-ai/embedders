@@ -57,7 +57,7 @@ class Embedder(Transformer):
             if show_progress:
                 num_batches = util.num_batches(documents, self.batch_size)
                 print("Initializing model, might take some time...")
-                for embedding_batch in tqdm(self._encode(documents, fit_model), total=num_batches):
+                for embedding_batch in tqdm(self._encode(documents, fit_model), total=num_batches, desc="Encoding batches ..."):
                     embeddings.extend(embedding_batch)
             else:
                 for embedding_batch in self._encode(documents, fit_model):

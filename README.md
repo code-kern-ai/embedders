@@ -96,7 +96,7 @@ With growing availability of large, pre-trained models such as provided by [🤗
 
 ## Roadmap
 - [x] Add extensive documentation to existing embedders
-- [ ] Add sample projects
+- [x] Add sample projects
 - [ ] Add test cases
 - [ ] Add further text feature-based sentence and word embedders
 - [ ] Add pre-trained word2vec embeddings

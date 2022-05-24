@@ -1,7 +1,6 @@
 ![embedders](https://uploads-ssl.webflow.com/61e47fafb12bd56b40022a49/626ee1c35a3abf0ca872486d_embedder-banner.png)
-<img src="https://img.shields.io/badge/version-0.0.8-red" />
-<img src="https://img.shields.io/badge/pip-0.0.8-red" />
-<img src="https://img.shields.io/badge/python-3.9-blue" />
+[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![pypi 0.0.11](https://img.shields.io/badge/pypi-0.0.11-red.svg)](https://pypi.org/project/embedders/0.0.11/)
 
 # ⚗️ embedders
 With `embedders`, you can easily convert your texts into sentence- or token-level embeddings within a few lines of code. Use cases for this include similarity search between texts, information extraction such as named entity recognition, or basic text classification.

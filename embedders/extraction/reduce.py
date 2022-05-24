@@ -31,7 +31,7 @@ class PCATokenReducer(PCAReducer):
             num_batches = util.num_batches(documents, self.embedder.batch_size)
             fit_after_n_batches = min(num_batches, fit_after_n_batches) - 1
             for batch_idx, batch in enumerate(
-                list(self.embedder.fit_transform(documents, as_generator=True))
+                self.embedder.fit_transform(documents, as_generator=True)
             ):
                 if batch_idx <= fit_after_n_batches:
                     embeddings_training.append(batch)

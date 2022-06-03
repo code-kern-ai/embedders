@@ -74,7 +74,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
         )
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(
             config_string
-        )
+        ).to(self.device)
         self.model = AutoModel.from_pretrained(
             config_string, output_hidden_states=True
         ).to(self.device)

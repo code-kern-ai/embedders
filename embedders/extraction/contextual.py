@@ -74,7 +74,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
         )
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(
             config_string
-        ).to(self.device)
+        )
         self.model = AutoModel.from_pretrained(
             config_string, output_hidden_states=True
         ).to(self.device)
@@ -114,8 +114,11 @@ class TransformerTokenEmbedder(TokenEmbedder):
     def _get_char_level_embeddings(
         self, document: str
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
-        encoded = self.transformer_tokenizer.encode_plus(
-            document, return_tensors="pt")
+        # encoded = self.transformer_tokenizer.encode_plus(
+        #     document, return_tensors="pt")
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        encoded = self.transformer_tokenizer(document, return_tensors="pt").to(device)
         tokens = encoded.encodings[0]
         num_tokens = len(
             set(tokens.words[1:-1])

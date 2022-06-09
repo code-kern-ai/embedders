@@ -114,8 +114,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
     def _get_char_level_embeddings(
         self, document: str
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        encoded = self.transformer_tokenizer(document, return_tensors="pt").to(device)
+        encoded = self.transformer_tokenizer(
+            document, return_tensors="pt").to(self.device)
         tokens = encoded.encodings[0]
         num_tokens = len(
             set(tokens.words[1:-1])

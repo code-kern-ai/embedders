@@ -93,14 +93,14 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
 
-    def _get_token_embedding_from_char_embedding(
+    def _match_transformer_embeddings_to_spacy_tokens(
         self,
-        char_level_embeddings: List[List[Tuple[int, int, List[List[float]]]]],
+        transformer_embeddings: List[List[Tuple[int, int, List[List[float]]]]],
         document_tokenized: Doc,
     ) -> List[List[float]]:
         embeddings = defaultdict(list)
 
-        for index_start, index_end, char_embeddings in char_level_embeddings:
+        for index_start, index_end, char_embeddings in transformer_embeddings:
             span = document_tokenized.char_span(
                 index_start, index_end, alignment_mode="expand"
             )
@@ -111,7 +111,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
             embeddings[key] = np.array(values).mean(0).tolist()
         return list(embeddings.values())
 
-    def _get_char_level_embeddings(
+    def _get_transformer_embeddings(
         self, document: str
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
         encoded = self.transformer_tokenizer(
@@ -121,7 +121,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
             set(tokens.words[1:-1])
         )  # 1 and -1 are [CLS] tokens, and other tokens can be ##subwords
         with torch.no_grad():
-            output = self.model(**encoded)
+                output = self.model(**encoded)
 
         # Get all hidden states
         states = output.hidden_states

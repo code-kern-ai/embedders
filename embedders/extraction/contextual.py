@@ -46,8 +46,7 @@ class SkipGramTokenEmbedder(TokenEmbedder):
         for documents_batch in util.batch(documents, self.batch_size):
             documents_batch_embedded = []
             for doc in documents_batch:
-                documents_batch_embedded.append(
-                    [lookup_w2v(tok.text) for tok in doc])
+                documents_batch_embedded.append([lookup_w2v(tok.text) for tok in doc])
             yield documents_batch_embedded
 
 
@@ -69,12 +68,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
         batch_size: int = 128,
     ):
         super().__init__(language_code, precomputed_docs, batch_size)
-        self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu'
-        )
-        self.transformer_tokenizer = AutoTokenizer.from_pretrained(
-            config_string
-        )
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.transformer_tokenizer = AutoTokenizer.from_pretrained(config_string)
         self.model = AutoModel.from_pretrained(
             config_string, output_hidden_states=True
         ).to(self.device)
@@ -85,10 +80,10 @@ class TransformerTokenEmbedder(TokenEmbedder):
         for documents_batch in util.batch(documents, self.batch_size):
             documents_batch_embedded = []
             for doc in documents_batch:
-                char_level_embs = self._get_char_level_embeddings(str(doc))
+                transformer_embs = self._get_transformer_embeddings(str(doc))
                 doc = self._get_tokenized_document(doc)
-                document_embedded = self._get_token_embedding_from_char_embedding(
-                    char_level_embs, doc
+                document_embedded = self._match_transformer_embeddings_to_spacy_tokens(
+                    transformer_embs, doc
                 )
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
@@ -114,14 +109,15 @@ class TransformerTokenEmbedder(TokenEmbedder):
     def _get_transformer_embeddings(
         self, document: str
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
-        encoded = self.transformer_tokenizer(
-            document, return_tensors="pt").to(self.device)
+        encoded = self.transformer_tokenizer(document, return_tensors="pt").to(
+            self.device
+        )
         tokens = encoded.encodings[0]
-        num_tokens = len(
+        num_words = len(
             set(tokens.words[1:-1])
         )  # 1 and -1 are [CLS] tokens, and other tokens can be ##subwords
         with torch.no_grad():
-                output = self.model(**encoded)
+            output = self.model(**encoded)
 
         # Get all hidden states
         states = output.hidden_states
@@ -131,10 +127,9 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
         token_embeddings = []
 
-        for token_idx in range(num_tokens):
-            index_begin, index_end = tokens.word_to_chars(token_idx)
-            token_ids_word = np.where(
-                np.array(encoded.word_ids()) == token_idx)
+        for word_idx in range(num_words):
+            index_begin, index_end = tokens.word_to_chars(word_idx)
+            token_ids_word = np.where(np.array(encoded.word_ids()) == word_idx)
             # Only select the tokens that constitute the requested word
             word_tokens_output = output[token_ids_word]
             token_embeddings.append(

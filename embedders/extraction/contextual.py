@@ -111,13 +111,13 @@ class TransformerTokenEmbedder(TokenEmbedder):
     ) -> List[List[float]]:
         embeddings = defaultdict(list)
 
-        for index_start, index_end, char_embeddings in transformer_embeddings:
+        for index_start, index_end, transformer_emb in transformer_embeddings:
             span = document_tokenized.char_span(
                 index_start, index_end, alignment_mode="expand"
             )
             if span is not None:
                 token = span[0]
-                embeddings[token.i].extend(char_embeddings)
+                embeddings[token.i].extend(transformer_emb)
         for key, values in embeddings.items():
             embeddings[key] = np.array(values).mean(0).tolist()
         return list(embeddings.values())
@@ -142,7 +142,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
         token_embeddings = []
         # 1 and -1 are [CLS] tokens, and other tokens can be ##subwords
-        for word_idx in sorted(set(tokens.words[1:-1])):
+        for word_idx in set(tokens.words[1:-1]):
             index_begin, index_end = tokens.word_to_chars(word_idx)
             token_ids_word = np.where(np.array(encoded.word_ids()) == word_idx)
             # Only select the tokens that constitute the requested word
@@ -178,8 +178,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
         self, document: Doc, estimated_tokens: int
     ) -> Iterator[Tuple[str, int]]:
 
-        split_into = math.ceil(
-            estimated_tokens / self.transformer_tokenizer.model_max_length
+        split_into = (
+            round(estimated_tokens / self.transformer_tokenizer.model_max_length) + 1
         )
         len_part = math.ceil(len(document) / split_into)
 

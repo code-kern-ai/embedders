@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import List, Generator, Optional, Union
 from spacy.tokens.doc import Doc
 from sklearn.decomposition import PCA
@@ -6,7 +6,10 @@ from tqdm import tqdm
 from embedders import util
 
 
-class Transformer(ABC):
+class Transformer(metaclass=ABCMeta):
+    def __init__(self):
+        self._warnings = ""
+
     @abstractmethod
     def fit_transform(
         self, documents: List[Union[str, Doc]], as_generator: bool
@@ -37,18 +40,30 @@ class Transformer(ABC):
         """
         pass
 
-
-class Embedder(Transformer):
     @abstractmethod
-    def __init__(self):
+    def get_warnings(self) -> List:
+        """Collects all warnings reported during the embedding creation or PCA.
+
+        Returns:
+            List: List with all warnings
+        """
         pass
+
+
+class Embedder(Transformer, metaclass=ABCMeta):
+    def __init__(self):
+        super().__init__()
 
     @abstractmethod
     def _encode(self, documents: List[Union[str, Doc]], fit_model: bool) -> Generator:
         pass
 
     def _encode_batch(
-        self, documents: List[Union[str, Doc]], as_generator: bool, fit_model: bool, show_progress: Optional[bool] = True
+        self,
+        documents: List[Union[str, Doc]],
+        as_generator: bool,
+        fit_model: bool,
+        show_progress: Optional[bool] = True,
     ) -> Union[List, Generator]:
         if as_generator:
             return self._encode(documents, fit_model)
@@ -57,7 +72,11 @@ class Embedder(Transformer):
             if show_progress:
                 num_batches = util.num_batches(documents, self.batch_size)
                 print("Initializing model, might take some time...")
-                for embedding_batch in tqdm(self._encode(documents, fit_model), total=num_batches, desc="Encoding batches ..."):
+                for embedding_batch in tqdm(
+                    self._encode(documents, fit_model),
+                    total=num_batches,
+                    desc="Encoding batches ...",
+                ):
                     embeddings.extend(embedding_batch)
             else:
                 for embedding_batch in self._encode(documents, fit_model):
@@ -74,8 +93,11 @@ class Embedder(Transformer):
     ) -> Union[List, Generator]:
         return self._encode_batch(documents, as_generator, False)
 
+    def get_warnings(self) -> List:
+        return self._warnings
 
-class PCAReducer(Transformer):
+
+class PCAReducer(Transformer, metaclass=ABCMeta):
     """Wraps embedder into a principial component analysis to reduce the dimensionality.
 
     Args:
@@ -91,6 +113,7 @@ class PCAReducer(Transformer):
         autocorrect_n_components: bool = True,
         **kwargs
     ):
+        super().__init__()
         self.embedder = embedder
         self.reducer = PCA(n_components=n_components, **kwargs)
         self.batch_size = self.embedder.batch_size
@@ -148,3 +171,6 @@ class PCAReducer(Transformer):
 
     def transform(self, documents, as_generator=False) -> Union[List, Generator]:
         return self._reduce_batch(documents, as_generator, False, False, 0)
+
+    def get_warnings(self) -> List:
+        return " ".join([self.embedder._warnings, self._warnings])

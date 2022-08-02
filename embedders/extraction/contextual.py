@@ -87,6 +87,13 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 # split the document if the estimated tokens are exceeding the
                 # model's max input length
                 if self.transformer_tokenizer.model_max_length < number_est_tokens:
+                    self._warnings = (
+                        "The document length exceeds the model's max input length. "
+                        "The text is splitted and the parts are processed individually."
+                    )
+                    # print warning for usage as library
+                    print("Warning: " + self._warnings)
+
                     transformer_embs = []
                     for doc_part, index_offset in self._split_document(
                         doc.text, number_est_tokens

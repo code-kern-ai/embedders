@@ -3,8 +3,12 @@ from embedders import Embedder
 from spacy.tokens.doc import Doc
 from typing import Union
 
+
 class TokenEmbedder(Embedder):
-    def __init__(self, language_code: str, precomputed_docs:bool=False, batch_size:int=128):
+    def __init__(
+        self, language_code: str, precomputed_docs: bool = False, batch_size: int = 128
+    ):
+        super().__init__()
         self.preloaded = precomputed_docs
         if precomputed_docs:
             self.nlp = spacy.blank(language_code)
@@ -17,4 +21,3 @@ class TokenEmbedder(Embedder):
             return document
         else:
             return self.nlp(document)
-            

@@ -107,6 +107,13 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 document_embedded = self._match_transformer_embeddings_to_spacy_tokens(
                     transformer_embs, doc
                 )
+
+                if len(document_embedded) != len(doc):
+                    self._warnings = (
+                        "The number of embeddings does not match the number of spacy tokens. "
+                        "Please contact support."
+                    )
+
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
 

@@ -72,9 +72,13 @@ class TransformerTokenEmbedder(TokenEmbedder):
         super().__init__(language_code, precomputed_docs, batch_size)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(config_string)
+        self.transformer_tokenizer.add_special_tokens(
+            {"additional_special_tokens": ["[NL]"]}
+        )
         self.model = AutoModel.from_pretrained(
             config_string, output_hidden_states=True
         ).to(self.device)
+        self.model.resize_token_embeddings(len(self.transformer_tokenizer))
 
     def _encode(
         self, documents: Union[List[str], List[Doc]], fit_model: bool
@@ -83,7 +87,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
             documents_batch_embedded = []
             for doc in documents_batch:
                 doc = self._get_tokenized_document(doc)
-                number_est_tokens = self._estimate_token_number(doc.text)
+                text = self._preprocess_doc_text(doc)
+                number_est_tokens = self._estimate_token_number(text)
                 # split the document if the estimated tokens are exceeding the
                 # model's max input length
                 if self.transformer_tokenizer.model_max_length < number_est_tokens:
@@ -96,13 +101,13 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
                     transformer_embs = []
                     for doc_part, index_offset in self._split_document(
-                        doc.text, number_est_tokens
+                        text, number_est_tokens
                     ):
                         transformer_embs.extend(
                             self._get_transformer_embeddings(doc_part, index_offset)
                         )
                 else:
-                    transformer_embs = self._get_transformer_embeddings(doc.text)
+                    transformer_embs = self._get_transformer_embeddings(text)
 
                 document_embedded = self._match_transformer_embeddings_to_spacy_tokens(
                     transformer_embs, doc
@@ -116,6 +121,22 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
+
+    def _preprocess_doc_text(self, doc: Doc) -> str:
+        """Replaces the text of tokens which only consist of whitespace with the special
+        token [NL] (new line). These tokens are normally built up by new line or
+        carriage return symbols.
+        """
+        text = ""
+        prev_end = 0
+        for tkn in doc:
+            if not re.sub(r"[\s]+", "", tkn.text):
+                idx_start, idx_end = tkn.idx, tkn.idx + len(tkn)
+                text += doc.text[prev_end:idx_start]
+                text += "[NL]"
+                prev_end = idx_end
+        text += doc.text[prev_end:]
+        return text
 
     def _match_transformer_embeddings_to_spacy_tokens(
         self,

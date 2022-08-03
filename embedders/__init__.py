@@ -173,4 +173,7 @@ class PCAReducer(Transformer, metaclass=ABCMeta):
         return self._reduce_batch(documents, as_generator, False, False, 0)
 
     def get_warnings(self) -> List:
-        return " ".join([self.embedder._warnings, self._warnings])
+        if self._warnings:
+            return " ".join([self.embedder._warnings, self._warnings])
+        else:
+            return self.embedder._warnings

@@ -179,7 +179,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
         special character is treated as a token by the transformer tokenizer.
         """
         avg_subtokens_per_token = 3
-        number_tokens = len(re.split(r"[\w\s]+", document))
+        number_tokens = len(re.findall(r"[\w]+", document))
         number_special_characters = len(re.sub(r"[\w\s]+", "", document))
         return avg_subtokens_per_token * number_tokens + number_special_characters
 

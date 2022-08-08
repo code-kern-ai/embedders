@@ -87,7 +87,12 @@ class TransformerTokenEmbedder(TokenEmbedder):
             documents_batch_embedded = []
             for doc in documents_batch:
                 doc = self._get_tokenized_document(doc)
-                text = self._preprocess_doc_text(doc)
+                if len(doc) == 0:
+                    # no spacy token, add dummy embedding for pca
+                    documents_batch_embedded.append([[0.0] * self.model.config.dim])
+                    continue
+
+                text, offsets = self._preprocess_doc_text(doc)
                 number_est_tokens = self._estimate_token_number(text)
                 # split the document if the estimated tokens are exceeding the
                 # model's max input length
@@ -110,7 +115,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
                     transformer_embs = self._get_transformer_embeddings(text)
 
                 document_embedded = self._match_transformer_embeddings_to_spacy_tokens(
-                    transformer_embs, doc
+                    transformer_embs, doc, offsets
                 )
 
                 if len(document_embedded) != len(doc):
@@ -122,30 +127,46 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
 
-    def _preprocess_doc_text(self, doc: Doc) -> str:
+    def _preprocess_doc_text(self, doc: Doc) -> Tuple[str, List[List[int]]]:
         """Replaces the text of tokens which only consist of whitespace with the special
         token [NL] (new line). These tokens are normally built up by new line or
         carriage return symbols.
         """
         text = ""
         prev_end = 0
+        offsets = [[0, 0]]
+        sum_offsets = 0
         for tkn in doc:
             if not re.sub(r"[\s]+", "", tkn.text):
+                # whitespace string to replace
                 idx_start, idx_end = tkn.idx, tkn.idx + len(tkn)
                 text += doc.text[prev_end:idx_start]
                 text += "[NL]"
+
+                offsets.append([idx_end - sum_offsets + 4 - len(tkn), len(tkn) - 4])
+                sum_offsets += len(tkn) - 4
                 prev_end = idx_end
         text += doc.text[prev_end:]
-        return text
+        return text, offsets
 
     def _match_transformer_embeddings_to_spacy_tokens(
         self,
         transformer_embeddings: List[List[Tuple[int, int, List[List[float]]]]],
         document_tokenized: Doc,
+        offsets: List[List[int]],
     ) -> List[List[float]]:
         embeddings = defaultdict(list)
 
+        offsets = np.array(offsets)
+
         for index_start, index_end, transformer_emb in transformer_embeddings:
+
+            offset_start = np.sum(offsets[np.where(offsets[:, 0] <= index_start)][:, 1])
+            offset_end = np.sum(offsets[np.where(offsets[:, 0] <= index_end)][:, 1])
+
+            index_start += offset_start
+            index_end += offset_end
+
             span = document_tokenized.char_span(
                 index_start, index_end, alignment_mode="expand"
             )
@@ -165,6 +186,20 @@ class TransformerTokenEmbedder(TokenEmbedder):
             self.device
         )
         tokens = encoded.encodings[0]
+
+        # fallback if the number of tokens is still too big
+        if len(tokens) > self.transformer_tokenizer.model_max_length:
+            token_embs = []
+            for doc_part, additional_index_offset in self._split_document(
+                document, len(tokens)
+            ):
+                token_embs.extend(
+                    self._get_transformer_embeddings(
+                        doc_part, index_offset + additional_index_offset
+                    )
+                )
+            return token_embs
+
         with torch.no_grad():
             output = self.model(**encoded)
 
@@ -200,7 +235,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
         special character is treated as a token by the transformer tokenizer.
         """
         avg_subtokens_per_token = 3
-        number_tokens = len(re.findall(r"[\w]+", document))
+        number_tokens = len(re.findall(r"\[NL\]|\w+", document))
         number_special_characters = len(re.sub(r"[\w\s]+", "", document))
         return avg_subtokens_per_token * number_tokens + number_special_characters
 
@@ -209,7 +244,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
     ) -> Iterator[Tuple[str, int]]:
 
         token_spans = [
-            token.span() for token in re.finditer(r"\w+|[^\w\s]+?", document)
+            token.span() for token in re.finditer(r"\[NL\]|\w+|[^\w\s]+?", document)
         ]
         split_into = (
             round(estimated_tokens / self.transformer_tokenizer.model_max_length) + 1

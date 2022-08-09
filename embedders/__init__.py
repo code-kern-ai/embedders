@@ -8,7 +8,7 @@ from embedders import util
 
 class Transformer(metaclass=ABCMeta):
     def __init__(self):
-        self._warnings = ""
+        self._warnings = []
 
     @abstractmethod
     def fit_transform(
@@ -173,7 +173,4 @@ class PCAReducer(Transformer, metaclass=ABCMeta):
         return self._reduce_batch(documents, as_generator, False, False, 0)
 
     def get_warnings(self) -> List:
-        if self._warnings:
-            return " ".join([self.embedder._warnings, self._warnings])
-        else:
-            return self.embedder._warnings
+        return self.embedder._warnings + self._warnings

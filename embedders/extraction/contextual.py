@@ -62,6 +62,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
         batch_size (int, optional): Defines the number of conversions after which the embedder yields. Defaults to 128.
     """
 
+    _NL_TOKEN = "[NL]"
+
     def __init__(
         self,
         config_string: str,
@@ -71,10 +73,12 @@ class TransformerTokenEmbedder(TokenEmbedder):
     ):
         super().__init__(language_code, precomputed_docs, batch_size)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(config_string)
         self.transformer_tokenizer.add_special_tokens(
-            {"additional_special_tokens": ["[NL]"]}
+            {"additional_special_tokens": [self._NL_TOKEN]}
         )
+
         self.model = AutoModel.from_pretrained(
             config_string, output_hidden_states=True
         ).to(self.device)
@@ -83,26 +87,34 @@ class TransformerTokenEmbedder(TokenEmbedder):
     def _encode(
         self, documents: Union[List[str], List[Doc]], fit_model: bool
     ) -> Iterator[List[List[List[float]]]]:
-        for documents_batch in util.batch(documents, self.batch_size):
+        for batch_number, documents_batch in enumerate(
+            util.batch(documents, self.batch_size)
+        ):
             documents_batch_embedded = []
-            for doc in documents_batch:
-                doc = self._get_tokenized_document(doc)
-                if len(doc) == 0:
-                    # no spacy token, add dummy embedding for pca
-                    documents_batch_embedded.append([[0.0] * self.model.config.dim])
-                    continue
+            for document_number, document in enumerate(documents_batch):
+                doc = self._get_tokenized_document(document)
 
-                text, offsets = self._preprocess_doc_text(doc)
+                # no spacy token, set special token as text, so that an embedding
+                # is created that can be processed by the PCA
+                if len(doc) == 0:
+                    doc = self.nlp(self._NL_TOKEN)
+
+                # spacy creates tokens which only contain whitespace characters
+                # the transformer tokenizer ignores these tokens
+                # in order to avoid problems while matching the tokens the text is
+                # preprocessed
+                text, prep_offsets = self._preprocess_doc_text(doc)
+
+                # transformer models have a maximum number of tokens which can be
+                # processed at the same time
+                # in this case the text is splitted in mutliple subparts
                 number_est_tokens = self._estimate_token_number(text)
-                # split the document if the estimated tokens are exceeding the
-                # model's max input length
                 if self.transformer_tokenizer.model_max_length < number_est_tokens:
-                    self._warnings = (
-                        "The document length exceeds the model's max input length. "
+                    idx_document = batch_number * self.batch_size + document_number
+                    self._warnings.append(
+                        f"Lenght of document {idx_document} exceeds the model's max input length. "
                         "The text is splitted and the parts are processed individually."
                     )
-                    # print warning for usage as library
-                    print("Warning: " + self._warnings)
 
                     transformer_embs = []
                     for doc_part, index_offset in self._split_document(
@@ -115,72 +127,91 @@ class TransformerTokenEmbedder(TokenEmbedder):
                     transformer_embs = self._get_transformer_embeddings(text)
 
                 document_embedded = self._match_transformer_embeddings_to_spacy_tokens(
-                    transformer_embs, doc, offsets
+                    transformer_embs, doc, prep_offsets
                 )
 
                 if len(document_embedded) != len(doc):
-                    self._warnings = (
+                    idx_document = batch_number * self.batch_size + document_number
+                    self._warnings.append(
+                        f"Document {idx_document}: "
                         "The number of embeddings does not match the number of spacy tokens. "
                         "Please contact support."
+                        f"{doc}"
                     )
 
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
 
-    def _preprocess_doc_text(self, doc: Doc) -> Tuple[str, List[List[int]]]:
-        """Replaces the text of tokens which only consist of whitespace with the special
-        token [NL] (new line). These tokens are normally built up by new line or
-        carriage return symbols.
+    def _preprocess_doc_text(self, doc: Doc) -> Tuple[str, np.ndarray]:
+        """Replaces the text of tokens which only consist of whitespace characters
+        with the special token [NL] (new line).
+        The special token and the whitespace string can consist of different number of
+        chars. To match the tokens later these differences are saved as offsets.
         """
-        text = ""
-        prev_end = 0
-        offsets = [[0, 0]]
-        sum_offsets = 0
+
+        prep_text = ""
+        idx_already_preprocessed = 0
+        # pairs of the line number of the preprocessed text and the offset relative to
+        # the original document, here, offset is the difference btw the preprocessed and
+        # the original text
+        prep_offsets = [(0, 0)]
+
         for tkn in doc:
             if not re.sub(r"[\s]+", "", tkn.text):
-                # whitespace string to replace
+                # indices of current token which will be replaced by the special token
                 idx_start, idx_end = tkn.idx, tkn.idx + len(tkn)
-                text += doc.text[prev_end:idx_start]
-                text += "[NL]"
+                # append already processed text and the special token
+                prep_text += doc.text[idx_already_preprocessed:idx_start]
+                prep_text += self._NL_TOKEN
 
-                offsets.append([idx_end - sum_offsets + 4 - len(tkn), len(tkn) - 4])
-                sum_offsets += len(tkn) - 4
-                prev_end = idx_end
-        text += doc.text[prev_end:]
-        return text, offsets
+                additional_offset = len(tkn) - len(self._NL_TOKEN)
+                prep_offsets.append(
+                    (
+                        len(prep_text),  # index to apply offset
+                        additional_offset,  # offset to be applied
+                    )
+                )
+                idx_already_preprocessed = idx_end
+
+        # add remaining text
+        prep_text += doc.text[idx_already_preprocessed:]
+
+        return prep_text, np.array(prep_offsets)
 
     def _match_transformer_embeddings_to_spacy_tokens(
         self,
         transformer_embeddings: List[List[Tuple[int, int, List[List[float]]]]],
         document_tokenized: Doc,
-        offsets: List[List[int]],
+        prep_offsets: np.ndarray = None,
     ) -> List[List[float]]:
-        embeddings = defaultdict(list)
 
-        offsets = np.array(offsets)
+        embeddings = defaultdict(list)
 
         for index_start, index_end, transformer_emb in transformer_embeddings:
 
-            offset_start = np.sum(offsets[np.where(offsets[:, 0] <= index_start)][:, 1])
-            offset_end = np.sum(offsets[np.where(offsets[:, 0] <= index_end)][:, 1])
-
-            index_start += offset_start
-            index_end += offset_end
+            if prep_offsets:
+                index_start = self._add_offset(index_start, prep_offsets)
+                index_end = self._add_offset(index_end, prep_offsets)
 
             span = document_tokenized.char_span(
                 index_start, index_end, alignment_mode="expand"
             )
             if span is not None:
+                # if a transformer token include multiple spacy tokens, the spacy
+                # tokens get the same transformer embedding
                 for token in span:
                     embeddings[token.i].extend(transformer_emb)
         for key, values in embeddings.items():
             embeddings[key] = np.array(values).mean(0).tolist()
         return list(embeddings.values())
 
+    def _add_offset(self, idx: int, offsets: np.ndarray) -> int:
+        return idx + np.sum(offsets[np.where(offsets[:, 0] <= idx)][:, 1])
+
     def _get_transformer_embeddings(
         self,
         document: str,
-        index_offset: int = 0,
+        idx_offset: int = 0,
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
         encoded = self.transformer_tokenizer(document, return_tensors="pt").to(
             self.device
@@ -189,13 +220,17 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
         # fallback if the number of tokens is still too big
         if len(tokens) > self.transformer_tokenizer.model_max_length:
+            self._warnings.append(
+                "Subparts of the embedding were still too large and had to be split."
+            )
+
             token_embs = []
-            for doc_part, additional_index_offset in self._split_document(
+            for doc_part, additional_idx_offset in self._split_document(
                 document, len(tokens)
             ):
                 token_embs.extend(
                     self._get_transformer_embeddings(
-                        doc_part, index_offset + additional_index_offset
+                        doc_part, idx_offset + additional_idx_offset
                     )
                 )
             return token_embs
@@ -218,8 +253,8 @@ class TransformerTokenEmbedder(TokenEmbedder):
             word_tokens_output = output[token_ids_word]
             token_embeddings.append(
                 [
-                    index_begin + index_offset,
-                    index_end + index_offset,
+                    index_begin + idx_offset,
+                    index_end + idx_offset,
                     word_tokens_output.tolist(),
                 ]
             )

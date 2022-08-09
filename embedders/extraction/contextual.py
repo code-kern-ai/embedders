@@ -226,7 +226,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
         for index_start, index_end, transformer_emb in transformer_embeddings:
 
-            if prep_offsets:
+            if prep_offsets is not None:
                 index_start = self._add_offset(index_start, prep_offsets)
                 index_end = self._add_offset(index_end, prep_offsets)
 

@@ -126,7 +126,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 if self.transformer_tokenizer.model_max_length < number_est_tokens:
                     idx_document = batch_number * self.batch_size + document_number
                     self._warnings.append(
-                        f"Lenght of document {idx_document} exceeds the model's max input length. "
+                        f"Length of document {idx_document} exceeds the model's max input length. "
                         "The text is splitted and the parts are processed individually."
                     )
 
@@ -343,7 +343,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
         self, document: str, estimated_tokens: int
     ) -> Iterator[Tuple[str, int]]:
         """
-        Splits the documens into subparts, according to the model's max lenght and the
+        Splits the documens into subparts, according to the model's max length and the
         number of estimated tokens.
 
         Args:

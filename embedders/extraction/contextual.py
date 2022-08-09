@@ -90,23 +90,37 @@ class TransformerTokenEmbedder(TokenEmbedder):
         for batch_number, documents_batch in enumerate(
             util.batch(documents, self.batch_size)
         ):
+            """
+            Computation of embeddings for each spacy token of each document. For the
+            embedding creation transformer models are used. Embeddings are calculated
+            for the transformer tokens of the document, then these token embeddings are
+            matched to the spacy tokens.
+
+            Args:
+                documents: list of strings or spacy documents
+                fit_model: not used, required by base class
+            Return:
+                Token embeddings for each document
+            """
+
             documents_batch_embedded = []
             for document_number, document in enumerate(documents_batch):
                 doc = self._get_tokenized_document(document)
 
-                # no spacy token, set special token as text, so that an embedding
-                # is created that can be processed by the PCA
+                # no spacy token.
+                # set special token as text, so that an embedding
+                # is created that can be processed by the PCA.
                 if len(doc) == 0:
                     doc = self.nlp(self._NL_TOKEN)
 
-                # spacy creates tokens which only contain whitespace characters
-                # the transformer tokenizer ignores these tokens
+                # spacy creates tokens which only contain whitespace characters.
+                # the transformer tokenizer ignores these tokens.
                 # in order to avoid problems while matching the tokens the text is
-                # preprocessed
+                # preprocessed.
                 text, prep_offsets = self._preprocess_doc_text(doc)
 
                 # transformer models have a maximum number of tokens which can be
-                # processed at the same time
+                # processed at the same time.
                 # in this case the text is splitted in mutliple subparts
                 number_est_tokens = self._estimate_token_number(text)
                 if self.transformer_tokenizer.model_max_length < number_est_tokens:
@@ -147,13 +161,20 @@ class TransformerTokenEmbedder(TokenEmbedder):
         with the special token [NL] (new line).
         The special token and the whitespace string can consist of different number of
         chars. To match the tokens later these differences are saved as offsets.
+
+        Args:
+            doc: spacy document
+        Returns:
+            Preprocessed text in which whitespace tokens are
+            replaced by a special token, an array containing the indices of replaced
+            strings and the resulting offset
         """
 
         prep_text = ""
         idx_already_preprocessed = 0
         # pairs of the line number of the preprocessed text and the offset relative to
         # the original document, here, offset is the difference btw the preprocessed and
-        # the original text
+        # the original text.
         prep_offsets = [(0, 0)]
 
         for tkn in doc:
@@ -184,6 +205,22 @@ class TransformerTokenEmbedder(TokenEmbedder):
         document_tokenized: Doc,
         prep_offsets: np.ndarray = None,
     ) -> List[List[float]]:
+        """
+        Transformer and spacy tokens differ. Usual the transformer tokenizer splits
+        splits the text into smaller subparts in comparison to the spacy tokenizer.
+        To create embeddings for the spacy tokens the transformer embeddings must be
+        matched. This is done by comparing the char spans of the tokens and matching the
+        tokens which overlap.
+
+        Args:
+            transformer_embeddings: List of start and end indices for each transformer
+                token and the corresponding embedding
+            document_tokenized: spacy tokens
+            prep_offsets: Indices and offsets to match the preprocessed text to the
+                original document
+        Returns:
+            Embeddings for each spacy token in the tokenized document.
+        """
 
         embeddings = defaultdict(list)
 
@@ -198,7 +235,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
             )
             if span is not None:
                 # if a transformer token include multiple spacy tokens, the spacy
-                # tokens get the same transformer embedding
+                # tokens get the same transformer embedding.
                 for token in span:
                     embeddings[token.i].extend(transformer_emb)
         for key, values in embeddings.items():
@@ -206,6 +243,15 @@ class TransformerTokenEmbedder(TokenEmbedder):
         return list(embeddings.values())
 
     def _add_offset(self, idx: int, offsets: np.ndarray) -> int:
+        """
+        Adds offset to index according to the offsets array.
+
+        Args:
+            idx: index to transform
+            offsets: indices and the corresponding offsets
+        Returns:
+            Index customized according to the offset
+        """
         return idx + np.sum(offsets[np.where(offsets[:, 0] <= idx)][:, 1])
 
     def _get_transformer_embeddings(
@@ -213,6 +259,20 @@ class TransformerTokenEmbedder(TokenEmbedder):
         document: str,
         idx_offset: int = 0,
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
+        """
+        Calculates embeddings for the given document using a transformer model.
+        First, the corresponding transformer tokens are computed. The next steps
+        computes the embeddings. With each embedding the indices of the according
+        chars are returned. idx_offset is used to return the correct indices if the
+        document has been split.
+
+        Args:
+            document: plain document text
+            idx_offset: offset if the document has been splitted
+        Returns:
+           Start and end index for each transformer token and the calculated
+           embedding
+        """
         encoded = self.transformer_tokenizer(document, return_tensors="pt").to(
             self.device
         )
@@ -268,16 +328,34 @@ class TransformerTokenEmbedder(TokenEmbedder):
         special and whitespace character.
         Special Characters are handled seperately according to the assumption that each
         special character is treated as a token by the transformer tokenizer.
+
+        Args:
+            document: plain text document
+        Returns:
+            Estimation for the number of transformer tokens included in the document
         """
         avg_subtokens_per_token = 3
-        number_tokens = len(re.findall(r"\[NL\]|\w+", document))
+        number_word_tokens = len(re.findall(r"\[NL\]|\w+", document))
         number_special_characters = len(re.sub(r"[\w\s]+", "", document))
-        return avg_subtokens_per_token * number_tokens + number_special_characters
+        return avg_subtokens_per_token * number_word_tokens + number_special_characters
 
     def _split_document(
         self, document: str, estimated_tokens: int
     ) -> Iterator[Tuple[str, int]]:
+        """
+        Splits the documens into subparts, according to the model's max lenght and the
+        number of estimated tokens.
 
+        Args:
+            document: plain text document
+            estimated_tokens: estimation for the token number
+        Returns:
+            Yields subpart of the document, splitted depending on max model length and
+            estimated number of tokens
+        """
+        # the regular expression matches the special token [NL], any word consiting of
+        # numbers and chars and single characters which are no whitespace or word
+        # character
         token_spans = [
             token.span() for token in re.finditer(r"\[NL\]|\w+|[^\w\s]+?", document)
         ]

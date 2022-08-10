@@ -10,6 +10,7 @@ from embedders import util
 from spacy.tokens.doc import Doc
 
 
+from embedders.enums import WarningType
 from embedders.extraction import TokenEmbedder
 
 
@@ -123,22 +124,30 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 # processed at the same time.
                 # in this case the text is splitted in mutliple subparts
                 number_est_tokens = self._estimate_token_number(text)
+                idx_document = batch_number * self.batch_size + document_number
                 if self.transformer_tokenizer.model_max_length < number_est_tokens:
-                    idx_document = batch_number * self.batch_size + document_number
-                    self._warnings.append(
-                        f"Length of document {idx_document} exceeds the model's max input length. "
-                        "The text is splitted and the parts are processed individually."
-                    )
+                    if WarningType.DOCUMENT_IS_SPLITTED.value in self._warnings:
+                        self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value] = [
+                            idx_document
+                        ]
+                    else:
+                        self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value].append(
+                            idx_document
+                        )
 
                     transformer_embs = []
                     for doc_part, index_offset in self._split_document(
                         text, number_est_tokens
                     ):
                         transformer_embs.extend(
-                            self._get_transformer_embeddings(doc_part, index_offset)
+                            self._get_transformer_embeddings(
+                                doc_part, idx_document, index_offset
+                            )
                         )
                 else:
-                    transformer_embs = self._get_transformer_embeddings(text)
+                    transformer_embs = self._get_transformer_embeddings(
+                        text, idx_document
+                    )
 
                 document_embedded = self._match_transformer_embeddings_to_spacy_tokens(
                     transformer_embs, doc, prep_offsets
@@ -146,12 +155,14 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
                 if len(document_embedded) != len(doc):
                     idx_document = batch_number * self.batch_size + document_number
-                    self._warnings.append(
-                        f"Document {idx_document}: "
-                        "The number of embeddings does not match the number of spacy tokens. "
-                        "Please contact support."
-                        f"{doc}"
-                    )
+                    if WarningType.TOKEN_MISMATCHING.value in self._warnings:
+                        self._warnings[WarningType.TOKEN_MISMATCHING.value] = [
+                            idx_document
+                        ]
+                    else:
+                        self._warnings[WarningType.TOKEN_MISMATCHING.value].append(
+                            idx_document
+                        )
 
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
@@ -257,6 +268,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
     def _get_transformer_embeddings(
         self,
         document: str,
+        idx_document: int,
         idx_offset: int = 0,
     ) -> List[List[Tuple[int, int, List[List[float]]]]]:
         """
@@ -280,9 +292,12 @@ class TransformerTokenEmbedder(TokenEmbedder):
 
         # fallback if the number of tokens is still too big
         if len(tokens) > self.transformer_tokenizer.model_max_length:
-            self._warnings.append(
-                "Subparts of the embedding were still too large and had to be split."
-            )
+            if WarningType.DOCUMENT_IS_SPLITTED.value in self._warnings:
+                self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value] = [idx_document]
+            else:
+                self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value].append(
+                    idx_document
+                )
 
             token_embs = []
             for doc_part, additional_idx_offset in self._split_document(

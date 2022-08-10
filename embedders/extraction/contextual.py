@@ -127,13 +127,13 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 idx_document = batch_number * self.batch_size + document_number
                 if self.transformer_tokenizer.model_max_length < number_est_tokens:
                     if WarningType.DOCUMENT_IS_SPLITTED.value in self._warnings:
-                        self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value] = [
-                            idx_document
-                        ]
-                    else:
                         self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value].append(
                             idx_document
                         )
+                    else:
+                        self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value] = [
+                            idx_document
+                        ]
 
                     transformer_embs = []
                     for doc_part, index_offset in self._split_document(
@@ -156,13 +156,13 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 if len(document_embedded) != len(doc):
                     idx_document = batch_number * self.batch_size + document_number
                     if WarningType.TOKEN_MISMATCHING.value in self._warnings:
-                        self._warnings[WarningType.TOKEN_MISMATCHING.value] = [
-                            idx_document
-                        ]
-                    else:
                         self._warnings[WarningType.TOKEN_MISMATCHING.value].append(
                             idx_document
                         )
+                    else:
+                        self._warnings[WarningType.TOKEN_MISMATCHING.value] = [
+                            idx_document
+                        ]
 
                 documents_batch_embedded.append(document_embedded)
             yield documents_batch_embedded
@@ -293,11 +293,11 @@ class TransformerTokenEmbedder(TokenEmbedder):
         # fallback if the number of tokens is still too big
         if len(tokens) > self.transformer_tokenizer.model_max_length:
             if WarningType.DOCUMENT_IS_SPLITTED.value in self._warnings:
-                self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value] = [idx_document]
-            else:
                 self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value].append(
                     idx_document
                 )
+            else:
+                self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value] = [idx_document]
 
             token_embs = []
             for doc_part, additional_idx_offset in self._split_document(

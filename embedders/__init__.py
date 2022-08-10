@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List, Generator, Optional, Union
+from typing import Dict, List, Generator, Optional, Union
 from spacy.tokens.doc import Doc
 from sklearn.decomposition import PCA
 from tqdm import tqdm
@@ -41,7 +41,7 @@ class Transformer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_warnings(self) -> List:
+    def get_warnings(self) -> Dict:
         """Collects all warnings reported during the embedding creation or PCA.
 
         Returns:
@@ -93,7 +93,7 @@ class Embedder(Transformer, metaclass=ABCMeta):
     ) -> Union[List, Generator]:
         return self._encode_batch(documents, as_generator, False)
 
-    def get_warnings(self) -> List:
+    def get_warnings(self) -> Dict:
         return self._warnings
 
 
@@ -172,5 +172,5 @@ class PCAReducer(Transformer, metaclass=ABCMeta):
     def transform(self, documents, as_generator=False) -> Union[List, Generator]:
         return self._reduce_batch(documents, as_generator, False, False, 0)
 
-    def get_warnings(self) -> List:
+    def get_warnings(self) -> Dict:
         return {**self._warnings, **self.embedder.get_warnings()}

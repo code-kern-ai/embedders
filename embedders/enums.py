@@ -1,0 +1,6 @@
+from enum import Enum
+
+
+class WarningType(Enum):
+    DOCUMENT_IS_SPLITTED = "DOCUMENT_IS_SPLITTED"
+    TOKEN_MISMATCHING = "TOKEN_MISMATCHING"

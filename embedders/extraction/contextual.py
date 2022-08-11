@@ -305,7 +305,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
             ):
                 token_embs.extend(
                     self._get_transformer_embeddings(
-                        doc_part, idx_offset + additional_idx_offset
+                        doc_part, idx_document, idx_offset + additional_idx_offset
                     )
                 )
             return token_embs

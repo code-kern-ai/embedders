@@ -56,7 +56,6 @@ Currently, we provide the following token embeddings:
 
 | **Path**                         | **Name**                 | **Embeds documents using ...**                              |
 | -------------------------------- | ------------------------ | ----------------------------------------------------------- |
-| embedders.extraction.contextual  | SkipGramTokenEmbedder    | a word2vec approach from gensim                             |
 | embedders.extraction.contextual  | TransformerTokenEmbedder | large, pre-trained transformers from https://huggingface.co |
 | embedders.extraction.count_based | BagOfCharsTokenEmbedder  | plain Bag of Characters approach                            |
 

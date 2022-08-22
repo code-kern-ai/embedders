@@ -25,7 +25,6 @@ setup(
     package_dir={"": "."},
     packages=find_packages("."),
     install_requires=[
-        "gensim",
         "huggingface-hub",
         "nltk",
         "numpy",

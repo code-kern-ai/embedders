@@ -5,52 +5,12 @@ import numpy as np
 import re
 from transformers import AutoTokenizer, AutoModel
 from collections import defaultdict
-from gensim.models import word2vec
 from embedders import util
 from spacy.tokens.doc import Doc
 
 
 from embedders.enums import WarningType
 from embedders.extraction import TokenEmbedder
-
-
-class SkipGramTokenEmbedder(TokenEmbedder):
-    """Embeds documents using a word2vec approach from gensim.
-
-    Args:
-        language_code (str): Name of the spaCy language model
-        precomputed_docs (bool, optional): If you have a large text corpus, it might make sense to precompute the data and input tokenized spaCy documents. Defaults to False.
-        batch_size (int, optional): Defines the number of conversions after which the embedder yields. Defaults to 128.
-    """
-
-    def __init__(
-        self, language_code: str, precomputed_docs: bool = False, batch_size: int = 128
-    ):
-        super().__init__(language_code, precomputed_docs, batch_size)
-        self.model = None
-
-    def _encode(
-        self, documents: Union[List[str], List[Doc]], fit_model: bool
-    ) -> Iterator[List[List[List[float]]]]:
-        def lookup_w2v(text: str) -> List[float]:
-            try:
-                return self.model.wv[text].tolist()
-            except KeyError:
-                return [0.0 for _ in range(self.model.vector_size)]
-
-        if not self.preloaded:
-            documents = [self.nlp(doc) for doc in documents]
-            vocabulary = []
-            for doc in documents:
-                vocabulary.append([tok.text for tok in doc])
-            if fit_model:
-                self.model = word2vec.Word2Vec(vocabulary, min_count=1)
-
-        for documents_batch in util.batch(documents, self.batch_size):
-            documents_batch_embedded = []
-            for doc in documents_batch:
-                documents_batch_embedded.append([lookup_w2v(tok.text) for tok in doc])
-            yield documents_batch_embedded
 
 
 class TransformerTokenEmbedder(TokenEmbedder):

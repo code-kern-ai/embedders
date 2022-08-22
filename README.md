@@ -1,6 +1,6 @@
 ![embedders](https://uploads-ssl.webflow.com/61e47fafb12bd56b40022a49/626ee1c35a3abf0ca872486d_embedder-banner.png)
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
-[![pypi 0.0.14](https://img.shields.io/badge/pypi-0.0.14-red.svg)](https://pypi.org/project/embedders/0.0.14/)
+[![pypi 0.0.16](https://img.shields.io/badge/pypi-0.0.16-red.svg)](https://pypi.org/project/embedders/0.0.16/)
 
 # ⚗️ embedders
 With `embedders`, you can easily convert your texts into sentence- or token-level embeddings within a few lines of code. Use cases for this include similarity search between texts, information extraction such as named entity recognition, or basic text classification.
@@ -56,7 +56,6 @@ Currently, we provide the following token embeddings:
 
 | **Path**                         | **Name**                 | **Embeds documents using ...**                              |
 | -------------------------------- | ------------------------ | ----------------------------------------------------------- |
-| embedders.extraction.contextual  | SkipGramTokenEmbedder    | a word2vec approach from gensim                             |
 | embedders.extraction.contextual  | TransformerTokenEmbedder | large, pre-trained transformers from https://huggingface.co |
 | embedders.extraction.count_based | BagOfCharsTokenEmbedder  | plain Bag of Characters approach                            |
 

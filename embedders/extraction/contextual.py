@@ -85,7 +85,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
                 # in this case the text is splitted in mutliple subparts
                 number_est_tokens = self._estimate_token_number(text)
                 idx_document = batch_number * self.batch_size + document_number
-                if self.transformer_tokenizer.model_max_length < number_est_tokens:
+                if self.model.config.max_position_embeddings < number_est_tokens:
                     if WarningType.DOCUMENT_IS_SPLITTED.value in self._warnings:
                         self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value].append(
                             idx_document
@@ -251,7 +251,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
         tokens = encoded.encodings[0]
 
         # fallback if the number of tokens is still too big
-        if len(tokens) > self.transformer_tokenizer.model_max_length:
+        if len(tokens) > self.model.config.max_position_embeddings:
             if WarningType.DOCUMENT_IS_SPLITTED.value in self._warnings:
                 self._warnings[WarningType.DOCUMENT_IS_SPLITTED.value].append(
                     idx_document
@@ -335,7 +335,7 @@ class TransformerTokenEmbedder(TokenEmbedder):
             token.span() for token in re.finditer(r"\[NL\]|\w+|[^\w\s]+?", document)
         ]
         split_into = (
-            round(estimated_tokens / self.transformer_tokenizer.model_max_length) + 1
+            round(estimated_tokens / self.model.config.max_position_embeddings) + 1
         )
         len_part = math.ceil(len(token_spans) / split_into)
 

@@ -1,12 +1,7 @@
-huggingface-hub
-nltk
 numpy
 scikit-learn
-scipy
 sentence-transformers
-sentencepiece
 spacy>=3.0.0
-tokenizers>=0.10.3
 torch>=1.6.0
 tqdm
 transformers>=4.6.0,<5.0.0

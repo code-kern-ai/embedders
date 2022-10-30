@@ -4,6 +4,7 @@ from spacy.tokens.doc import Doc
 from sklearn.decomposition import PCA
 from tqdm import tqdm
 from embedders import util
+from joblib import dump, load
 
 
 class Transformer(metaclass=ABCMeta):
@@ -119,6 +120,22 @@ class PCAReducer(Transformer, metaclass=ABCMeta):
         self.batch_size = self.embedder.batch_size
         self.autocorrect_n_components = autocorrect_n_components
 
+    def store_pca_weights(self, file_name: str):
+        """Stores the PCA weights to a file.
+
+        Args:
+            file_name (str): Path to the file without any file endings.
+        """
+        dump(self.reducer, f'{file_name}.joblib') 
+
+    def load_pca_weights(self, file_name: str):
+        """Loads the PCA weights from a file.
+
+        Args:
+            file_name (str): Path to the file without any file endings.
+        """
+        self.reducer = load(f'{file_name}.joblib')
+
     @abstractmethod
     def _reduce(
         self,
@@ -170,7 +187,7 @@ class PCAReducer(Transformer, metaclass=ABCMeta):
         )
 
     def transform(self, documents, as_generator=False) -> Union[List, Generator]:
-        return self._reduce_batch(documents, as_generator, False, False, 0)
+        return self._reduce_batch(documents, as_generator, False, 0)
 
     def get_warnings(self) -> Dict:
         return {**self._warnings, **self.embedder.get_warnings()}

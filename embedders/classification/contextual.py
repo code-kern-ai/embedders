@@ -6,6 +6,7 @@ from spacy.tokens.doc import Doc
 import torch
 import openai
 from openai import error as openai_error
+import cohere
 
 
 class HuggingFaceSentenceEmbedder(SentenceEmbedder):
@@ -50,3 +51,17 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
                 raise Exception(
                     "OpenAI API key is invalid. Please provide a valid API key in the constructor of OpenAISentenceEmbedder."
                 )
+
+
+class CohereSentenceEmbedder(SentenceEmbedder):
+    def __init__(self, cohere_api_key: str, batch_size: int = 128):
+        super().__init__(batch_size)
+        self.cohere_api_key = cohere_api_key
+        self.model = cohere.Client(self.cohere_api_key)
+
+    def _encode(
+        self, documents: List[Union[str, Doc]], fit_model: bool
+    ) -> Generator[List[List[float]], None, None]:
+        for documents_batch in util.batch(documents, self.batch_size):
+            embeddings = self.model.embed(documents_batch).embeddings
+            yield embeddings

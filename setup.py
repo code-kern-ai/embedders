@@ -18,7 +18,7 @@ setup(
     url="https://github.com/code-kern-ai/embedders",
     keywords=["kern", "machine learning", "representation learning", "python"],
     classifiers=[
-        "Development Status :: 3 - Beta",
+        "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
     ],

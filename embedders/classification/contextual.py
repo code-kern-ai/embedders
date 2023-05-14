@@ -9,7 +9,7 @@ from openai import error as openai_error
 import cohere
 
 
-class HuggingFaceSentenceEmbedder(SentenceEmbedder):
+class TransformerSentenceEmbedder(SentenceEmbedder):
     """Embeds documents using large, pre-trained transformers from https://huggingface.co
 
     Args:
@@ -27,6 +27,11 @@ class HuggingFaceSentenceEmbedder(SentenceEmbedder):
     ) -> Generator[List[List[float]], None, None]:
         for documents_batch in util.batch(documents, self.batch_size):
             yield self.model.encode(documents_batch, show_progress_bar=False).tolist()
+
+
+class HuggingFaceSentenceEmbedder(TransformerSentenceEmbedder):
+    def __init__(self, config_string: str, batch_size: int = 128):
+        super().__init__(config_string, batch_size)
 
 
 class OpenAISentenceEmbedder(SentenceEmbedder):

@@ -41,6 +41,16 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
         self.openai_api_key = openai_api_key
         openai.api_key = self.openai_api_key
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.model_name = state["model_name"]
+        self.openai_api_key = state["openai_api_key"]
+        openai.api_key = self.openai_api_key
+
     def _encode(
         self, documents: List[Union[str, Doc]], fit_model: bool
     ) -> Generator[List[List[float]], None, None]:

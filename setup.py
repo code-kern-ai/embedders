@@ -9,7 +9,7 @@ with open(os.path.join(this_directory, "README.md")) as file:
 
 setup(
     name="embedders",
-    version="0.0.19",
+    version="0.1.0",
     author="Johannes Hötter",
     author_email="johannes.hoetter@kern.ai",
     description="High-level API for creating sentence and token embeddings",
@@ -18,7 +18,7 @@ setup(
     url="https://github.com/code-kern-ai/embedders",
     keywords=["kern", "machine learning", "representation learning", "python"],
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 3 - Beta",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
     ],
@@ -32,5 +32,7 @@ setup(
         "torch>=1.6.0",
         "tqdm",
         "transformers>=4.6.0,<5.0.0",
+        "openai==0.27.6",
+        "cohere==4.4.1",
     ],
 )

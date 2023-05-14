@@ -40,7 +40,9 @@ Once you installed the package, you can apply the embedders with a few lines of 
 Currently, we provide the following sentence embeddings:
 | **Path** | **Name** | **Embeds documents using ...** |
 | ------------------------------------ | --------------------------- | ------------------------------------------------------------ |
-| embedders.classification.contextual | TransformerSentenceEmbedder | large, pre-trained transformers from https://huggingface.co |
+| embedders.classification.contextual | HuggingFaceSentenceEmbedder | large, pre-trained transformers from https://huggingface.co |
+| embedders.classification.contextual | OpenAISentenceEmbedder | large, pre-trained transformers from https://openai.com |
+| embedders.classification.contextual | CohereSentenceEmbedder | large, pre-trained transformers from https://cohere.com |
 | embedders.classification.count_based | BagOfCharsSentenceEmbedder | plain Bag of Chars approach |
 | embedders.classification.count_based | BagOfWordsSentenceEmbedder | plain Bag of Words approach |
 | embedders.classification.count_based | TfidfSentenceEmbedder | Term Frequency - Inverse Document Frequency (TFIDF) approach |

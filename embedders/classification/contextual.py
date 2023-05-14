@@ -64,6 +64,17 @@ class CohereSentenceEmbedder(SentenceEmbedder):
         self.cohere_api_key = cohere_api_key
         self.model = cohere.Client(self.cohere_api_key)
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Don't pickle 'model'
+        del state["model"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # Restore 'model' after unpickling
+        self.model = cohere.Client(self.cohere_api_key)
+
     def _encode(
         self, documents: List[Union[str, Doc]], fit_model: bool
     ) -> Generator[List[List[float]], None, None]:

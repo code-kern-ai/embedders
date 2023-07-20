@@ -37,17 +37,50 @@ class HuggingFaceSentenceEmbedder(TransformerSentenceEmbedder):
 class OpenAISentenceEmbedder(SentenceEmbedder):
     def __init__(
         self,
-        openai_api_key: str,  # azure key or openai key
-        model_name: str,  # azure endpoint or model name from OpenAI
+        openai_api_key: str,
+        model_name: str,
         batch_size: int = 128,
-        api_base: Optional[
-            str
-        ] = None,  # e.g. "https://azureopenkernai.openai.azure.com/"
-        api_type: Optional[str] = None,  # e.g. "azure"
-        api_version: Optional[
-            str
-        ] = None,  # e.g. "2023-05-15", but this may change in the future
+        api_base: Optional[str] = None,
+        api_type: Optional[str] = None,
+        api_version: Optional[str] = None,
     ):
+        """
+        Embeds documents using large language models from https://openai.com or https://azure.microsoft.com
+
+        Args:
+            openai_api_key (str): API key from OpenAI or Azure
+            model_name (str): Name of the embedding model from OpenAI (e.g. text-embedding-ada-002) or the name of your Azure endpoint
+            batch_size (int, optional): Defines the number of conversions after which the embedder yields. Defaults to 128.
+            api_base (str, optional): If you use Azure, you need to provide the base URL of your Azure endpoint (e.g. 'https://azureopenkernai.openai.azure.com/'). Defaults to None.
+            api_type (str, optional): If you use Azure, you need to provide the type of your Azure endpoint (e.g. 'azure'). Defaults to None.
+            api_version (str, optional): If you use Azure, you need to provide the version of your Azure endpoint (e.g. '2023-05-15'). Defaults to None.
+
+        Raises:
+            Exception: If you use Azure, you need to provide api_type, api_version and api_base.
+
+        Examples:
+            >>> from embedders.classification.contextual import OpenAISentenceEmbedder
+            >>> embedder_openai = OpenAISentenceEmbedder(
+            ...     "my-key-from-openai",
+            ...     "text-embedding-ada-002",
+            ... )
+            >>> embeddings = embedder_openai.transform(["This is a test", "This is another test"])
+            >>> print(embeddings)
+            [[-0.0001, 0.0002, ...], [-0.0001, 0.0002, ...]]
+
+            >>> from embedders.classification.contextual import OpenAISentenceEmbedder
+            >>> embedder_azure = OpenAISentenceEmbedder(
+            ...     "my-key-from-azure",
+            ...     "my-endpoint-name",
+            ...     api_base="https://azureopenkernai.openai.azure.com/",
+            ...     api_type="azure",
+            ...     api_version="2023-05-15",
+            ... )
+            >>> embeddings = embedder_azure.transform(["This is a test", "This is another test"])
+            >>> print(embeddings)
+            [[-0.0001, 0.0002, ...], [-0.0001, 0.0002, ...]]
+
+        """
         super().__init__(batch_size)
         self.model_name = model_name
         self.openai_api_key = openai_api_key

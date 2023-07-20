@@ -1,4 +1,4 @@
-from typing import List, Union, Generator
+from typing import List, Optional, Union, Generator
 from sentence_transformers import SentenceTransformer
 from embedders import util
 from embedders.classification import SentenceEmbedder
@@ -35,11 +35,41 @@ class HuggingFaceSentenceEmbedder(TransformerSentenceEmbedder):
 
 
 class OpenAISentenceEmbedder(SentenceEmbedder):
-    def __init__(self, openai_api_key: str, model_name: str, batch_size: int = 128):
+    def __init__(
+        self,
+        openai_api_key: str,  # azure key or openai key
+        model_name: str,  # azure endpoint or model name from OpenAI
+        batch_size: int = 128,
+        api_base: Optional[
+            str
+        ] = None,  # e.g. "https://azureopenkernai.openai.azure.com/"
+        api_type: Optional[str] = None,  # e.g. "azure"
+        api_version: Optional[
+            str
+        ] = None,  # e.g. "2023-05-15", but this may change in the future
+    ):
         super().__init__(batch_size)
         self.model_name = model_name
         self.openai_api_key = openai_api_key
         openai.api_key = self.openai_api_key
+
+        self.use_azure = any(
+            [
+                api_base is not None,
+                api_type is not None,
+                api_version is not None,
+            ]
+        )
+        if self.use_azure:
+            assert (
+                api_type is not None
+                and api_version is not None
+                and api_base is not None
+            ), "If you want to use Azure, you need to provide api_type, api_version and api_base."
+
+            openai.api_base = api_base
+            openai.api_type = api_type
+            openai.api_version = api_version
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -57,9 +87,14 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
         for documents_batch in util.batch(documents, self.batch_size):
             documents_batch = [doc.replace("\n", " ") for doc in documents_batch]
             try:
-                response = openai.Embedding.create(
-                    input=documents_batch, model=self.model_name
-                )
+                if self.use_azure:
+                    response = openai.Embedding.create(
+                        input=documents_batch, engine=self.model_name
+                    )
+                else:
+                    response = openai.Embedding.create(
+                        input=documents_batch, model=self.model_name
+                    )
                 embeddings = [entry["embedding"] for entry in response["data"]]
                 yield embeddings
             except openai_error.AuthenticationError:

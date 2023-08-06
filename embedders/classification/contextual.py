@@ -6,6 +6,7 @@ from spacy.tokens.doc import Doc
 import torch
 import openai
 from openai import error as openai_error
+from litellm import embedding
 import cohere
 
 
@@ -121,11 +122,11 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
             documents_batch = [doc.replace("\n", " ") for doc in documents_batch]
             try:
                 if self.use_azure:
-                    response = openai.Embedding.create(
+                    response = embedding(
                         input=documents_batch, engine=self.model_name
                     )
                 else:
-                    response = openai.Embedding.create(
+                    response = embedding(
                         input=documents_batch, model=self.model_name
                     )
                 embeddings = [entry["embedding"] for entry in response["data"]]

@@ -7,3 +7,4 @@ tqdm
 transformers>=4.6.0,<5.0.0
 openai
 cohere
+litellm

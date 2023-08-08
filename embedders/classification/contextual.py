@@ -137,7 +137,7 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
                     for azure_batch in util.batch(documents_batch, 16):
                         # azure only allows up to 16 documents per request
                         count = 0
-                        while True and count < 6:
+                        while True and count < 60:
                             try:
                                 count += 1
                                 response = openai.Embedding.create(
@@ -145,13 +145,16 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
                                 )
                                 break
                             except openai.error.RateLimitError as e:
-                                if count >= 5:
+                                if count >= 60:
                                     raise e
-                                print(
-                                    "Rate limit exceeded. Waiting 10 seconds...",
-                                    flush=True,
-                                )
-                                time.sleep(10)
+                                if count == 1:
+                                    print(
+                                        "Rate limit exceeded. Waiting 10 seconds...",
+                                        flush=True,
+                                    )
+                                    time.sleep(10.05)
+                                else:
+                                    time.sleep(1)
                         embeddings += [entry["embedding"] for entry in response["data"]]
                 else:
                     response = openai.Embedding.create(

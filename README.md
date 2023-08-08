@@ -1,6 +1,6 @@
 ![embedders](https://uploads-ssl.webflow.com/61e47fafb12bd56b40022a49/626ee1c35a3abf0ca872486d_embedder-banner.png)
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
-[![pypi 0.1.5](https://img.shields.io/badge/pypi-0.1.5-red.svg)](https://pypi.org/project/embedders/0.1.5/)
+[![pypi 0.1.6](https://img.shields.io/badge/pypi-0.1.6-red.svg)](https://pypi.org/project/embedders/0.1.6/)
 
 # ⚗️ embedders
 

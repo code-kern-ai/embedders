@@ -7,6 +7,7 @@ import torch
 import openai
 from openai import error as openai_error
 import cohere
+import time
 
 
 class TransformerSentenceEmbedder(SentenceEmbedder):
@@ -85,6 +86,9 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
         self.model_name = model_name
         self.openai_api_key = openai_api_key
         openai.api_key = self.openai_api_key
+        self.api_base = api_base
+        self.api_type = api_type
+        self.api_version = api_version
 
         self.use_azure = any(
             [
@@ -113,6 +117,14 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
         self.model_name = state["model_name"]
         self.openai_api_key = state["openai_api_key"]
         openai.api_key = self.openai_api_key
+        self.use_azure = state["use_azure"]
+        if self.use_azure:
+            self.api_base = state["api_base"]
+            self.api_type = state["api_type"]
+            self.api_version = state["api_version"]
+            openai.api_base = self.api_base
+            openai.api_type = self.api_type
+            openai.api_version = self.api_version
 
     def _encode(
         self, documents: List[Union[str, Doc]], fit_model: bool
@@ -121,14 +133,31 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
             documents_batch = [doc.replace("\n", " ") for doc in documents_batch]
             try:
                 if self.use_azure:
-                    response = openai.Embedding.create(
-                        input=documents_batch, engine=self.model_name
-                    )
+                    embeddings = []
+                    for azure_batch in util.batch(documents_batch, 16):
+                        # azure only allows up to 16 documents per request
+                        count = 0
+                        while True and count < 6:
+                            try:
+                                count += 1
+                                response = openai.Embedding.create(
+                                    input=azure_batch, engine=self.model_name
+                                )
+                                break
+                            except openai.error.RateLimitError as e:
+                                if count >= 5:
+                                    raise e
+                                print(
+                                    "Rate limit exceeded. Waiting 10 seconds...",
+                                    flush=True,
+                                )
+                                time.sleep(10)
+                        embeddings += [entry["embedding"] for entry in response["data"]]
                 else:
                     response = openai.Embedding.create(
                         input=documents_batch, model=self.model_name
                     )
-                embeddings = [entry["embedding"] for entry in response["data"]]
+                    embeddings = [entry["embedding"] for entry in response["data"]]
                 yield embeddings
             except openai_error.AuthenticationError:
                 raise Exception(

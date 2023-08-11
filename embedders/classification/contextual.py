@@ -158,7 +158,7 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
                         embeddings += [entry["embedding"] for entry in response["data"]]
                 else:
                     response = openai.Embedding.create(
-                        input=documents_batch, model=self.model_name
+                        input=documents_batch, engine=self.model_name
                     )
                     embeddings = [entry["embedding"] for entry in response["data"]]
                 yield embeddings

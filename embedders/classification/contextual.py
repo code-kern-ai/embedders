@@ -117,7 +117,7 @@ class OpenAISentenceEmbedder(SentenceEmbedder):
         self.model_name = state["model_name"]
         self.openai_api_key = state["openai_api_key"]
         openai.api_key = self.openai_api_key
-        self.use_azure = state["use_azure"]
+        self.use_azure = state.get("use_azure")
         if self.use_azure:
             self.api_base = state["api_base"]
             self.api_type = state["api_type"]

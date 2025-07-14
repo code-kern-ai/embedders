@@ -1,0 +1,37 @@
+[project]
+name = "embedders"
+description = "High-level API for creating sentence and token embeddings"
+version = "0.2.0"
+readme = "README.md"
+authors = [
+    { name = "Johannes Hötter", email = "johannes.hoetter@kern.ai" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "sentence-transformers",
+    "spacy>=3.0.0",
+    "torch>=1.6.0",
+    "tqdm",
+    "transformers>=4.6.0,<5.0.0",
+    "openai",
+    "cohere",    
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["kern", "machine learning", "representation learning", "python"]
+license = "MIT AND (Apache-2.0 OR BSD-2-Clause)"
+license-files = ["LICENSE"]
+
+[project.urls]
+source = "https://github.com/code-kern-ai/embedders"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
